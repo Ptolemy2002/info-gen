@@ -1,0 +1,67 @@
+# .tmplr.yml - Template setup for Python projects with uv
+steps:
+  # Read project name - suggest the directory name but allow customization
+  - read: project_name
+    prompt: What is the name of your project?
+    default:
+      from: filesystem.rootdir
+      fallback:
+        prompt: Please enter a project name
+
+  # Create a title case version of the project name
+  - read: project_title
+    eval: '{{ project_name | Capital Case }}'
+
+  # Read project description with a default value
+  - read: project_description
+    prompt: Provide a brief description of your project
+    default: "N/A"
+
+  # Read minimum Python version with a text input and default value
+  - read: python_version
+    prompt: What is the minimum Python version required?
+    default: "3.13"
+
+  # Update Python files with the project information
+  - update: "**/*.py"
+    include hidden: true
+
+  # Update pyproject.toml specifically
+  - update: pyproject.toml
+
+  # Update makefile
+  - update: makefile
+    include hidden: true
+
+  # Update README.md
+  - update: README.md
+    include hidden: true
+  
+  # Remove uv.lock file if it exists
+  - if:
+      exists: uv.lock
+    remove: uv.lock
+
+  # Remove .python-version file if it exists
+  - if:
+      exists: .python-version
+    remove: .python-version
+    
+  # Remove .venv directory if it exists
+  - if:
+      exists: .venv/**/*
+    remove: .venv
+    
+  # Remove outputs directory if it exists
+  - if:
+      exists: outputs/**/*
+    remove: outputs
+    
+  # Success message
+  - read: success_message
+    eval: |
+      Project setup complete for "{{ project_name }}"!
+      - Description: {{ project_description }}
+      - Minimum Python version: {{ python_version }}
+      
+      All Python files and pyproject.toml have been updated.

@@ -1,0 +1,23 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# Files dependent on the environment
+outputs
+
+# tmplr
+.tmplr-preview
+
+# uv generated files
+.python-version
+
+# Assets too large to store
+**/assets/colors-dirty.json
+**/assets/colors.json

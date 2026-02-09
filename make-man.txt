@@ -1,0 +1,201 @@
+This makefile provides targets for managing the Information Generator project,
+a uv-based Python tool for generating fake SSNs, phone numbers, and addresses for testing.
+
+Available Targets:
+------------------
+
+dep-install
+  Description: Installs required Linux dependencies
+  Usage: make dep-install
+  Details: Installs colorized-logs and moreutils packages using apt
+
+uv-install
+  Description: Installs the uv package manager
+  Usage: make uv-install
+  Details: Downloads and runs the official uv installation script from astral.sh
+
+rmzi
+  Description: Removes Zone Identifier files
+  Usage: make rmzi
+  Details: Executes the tools/rmzi.sh script to clean up :Zone.Identifier files
+           that are commonly created when copying files from Windows to WSL
+
+rm-lock
+  Description: Removes the uv lock file
+  Usage: make rm-lock
+  Details: Deletes the uv.lock file in the project root
+
+rm-outputs
+  Description: Removes the outputs directory
+  Usage: make rm-outputs
+  Details: Deletes the entire ./src/outputs directory and all its contents
+
+rm-pycache
+  Description: Removes Python cache directories
+  Usage: make rm-pycache
+  Details: Deletes all __pycache__ directories in the project root and subdirectories
+
+rm-venv
+  Description: Removes the virtual environment
+  Usage: make rm-venv
+  Details: Deletes the .venv directory
+
+reset
+  Description: Performs a complete cleanup
+  Usage: make reset
+  Details: Runs all cleanup targets in sequence: rmzi, rm-lock, rm-outputs, rm-pycache, rm-venv
+           Use this to restore the project to a clean state
+
+lu-test
+  Description: Runs the utils/location.py script for testing
+  Usage: make lu-test
+  Details: Executes utils/location.py using uv
+
+typo-test
+  Description: Runs the typo/main.py script for testing
+  Usage: make typo-test
+  Details: Executes typo/main.py using uv
+
+colors-test
+  Description: Runs the utils/colors.py script for testing
+  Usage: make colors-test
+  Details: Executes utils/colors.py using uv
+
+start
+  Description: Runs the main Python script with logging
+  Usage: make start [ARGS="arguments"]
+  Details: Creates a timestamped output directory and runs main.py using uv
+           Output directory structure: ./src/outputs/main/YYYY/MM/DD/HH-MM-SS/
+           All output is logged to log.txt in the output directory
+           Pass arguments to main.py using ARGS variable
+  Examples:
+    make start ARGS="ssn 5"
+    make start ARGS="phone 3 -c xxx-555-xxxx"
+
+gen-ssn
+  Description: Generates a single SSN
+  Usage: make gen-ssn [ARGS="component values"]
+  Details: Convenience target that calls main.py to generate 1 SSN
+           Optional component values can be specified (start, mid, end)
+           Use digits for fixed values, 'x' or other non-digits for random
+  Examples:
+    make gen-ssn
+    make gen-ssn ARGS="-c 666 12 3456"
+    make gen-ssn ARGS="-c xxx 12 xxxx"
+
+gen-phone
+  Description: Generates a single phone number
+  Usage: make gen-phone [ARGS="component values"]
+  Details: Convenience target that calls main.py to generate 1 phone number
+           Optional component values can be specified (area, central, line)
+           Use digits for fixed values, 'x' or other non-digits for random
+  Examples:
+    make gen-phone
+    make gen-phone ARGS="-c 555 555 0100"
+    make gen-phone ARGS="-c xxx 555 01xx"
+
+gen-address
+  Description: Generates a single address
+  Usage: make gen-address [ARGS="arguments"]
+  Details: Convenience target that calls main.py to generate 1 address
+           Additional arguments can be specified as needed
+  Examples:
+    make gen-address
+    make gen-address ARGS="additional options"
+
+gen-typos
+  Description: Generates a single text with typos
+  Usage: make gen-typos [ARGS="arguments"]
+  Details: Convenience target that calls main.py to generate 1 text with typos
+           Additional arguments can be specified as needed
+  Examples:
+    make gen-typos
+    make gen-typos ARGS="additional options"
+
+gen-color
+  Description: Generates a single color value
+  Usage: make gen-color [ARGS="arguments"]
+  Details: Convenience target that calls main.py to generate 1 color value
+           Additional arguments can be specified for color generation
+  Examples:
+    make gen-color
+    make gen-color ARGS="additional options"
+
+gen-ssns
+  Description: Generates multiple SSNs
+  Usage: make gen-ssns ARGS="count [component values]"
+  Details: Convenience target that calls main.py to generate multiple SSNs
+           First argument is the count, followed by optional components
+  Examples:
+    make gen-ssns ARGS="10"
+    make gen-ssns ARGS="5 -c 666 12 xxxx"
+
+gen-phones
+  Description: Generates multiple phone numbers
+  Usage: make gen-phones ARGS="count [component values]"
+  Details: Convenience target that calls main.py to generate multiple phone numbers
+           First argument is the count, followed by optional components
+  Examples:
+    make gen-phones ARGS="10"
+    make gen-phones ARGS="5 -c xxx 555 01xx"
+
+gen-addresses
+  Description: Generates multiple addresses
+  Usage: make gen-addresses ARGS="count [arguments]"
+  Details: Convenience target that calls main.py to generate multiple addresses
+           First argument is the count, followed by optional arguments
+  Examples:
+    make gen-addresses ARGS="10"
+    make gen-addresses ARGS="5 additional options"
+
+gen-typos-multi
+  Description: Generates multiple texts with typos
+  Usage: make gen-typos-multi ARGS="count [arguments]"
+  Details: Convenience target that calls main.py to generate multiple texts with typos
+           First argument is the count, followed by optional arguments
+  Examples:
+    make gen-typos-multi ARGS="10"
+    make gen-typos-multi ARGS="5 additional options"
+
+gen-colors
+  Description: Generates multiple color values
+  Usage: make gen-colors ARGS="count [arguments]"
+  Details: Convenience target that calls main.py to generate multiple color values
+           First argument is the count, followed by optional arguments for color generation
+  Examples:
+    make gen-colors ARGS="10"
+    make gen-colors ARGS="5 additional options"
+
+clean-dirty-colors
+  Description: Cleans the colors-dirty.json file and creates a clean colors.json. Both files will be in the assets directory.
+
+help
+  Description: Displays help for main.py
+  Usage: make help [ARGS="additional options"]
+  Details: Runs main.py with --help flag and logs output
+           Additional arguments can be passed via ARGS variable
+  Example: make help
+
+make-help
+  Description: Displays this help documentation
+  Usage: make make-help
+  Details: Outputs the contents of make-man.txt to the console
+
+Variables:
+----------
+
+DATE
+  Automatically set to current date in YYYY/MM/DD format
+
+TIME
+  Automatically set to current time in HH-MM-SS format
+
+MAIN_OUTPUT_DIR
+  Output directory path: ./src/outputs/main/$(DATE)/$(TIME)
+
+ARGS
+  User-supplied arguments passed to main.py
+  Usage: make start ARGS="your arguments here"
+
+FULL_ARGS
+  Internal variable combining all arguments for main.py

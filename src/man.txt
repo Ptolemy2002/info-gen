@@ -1,0 +1,631 @@
+INFO-GEN(1)                       User Commands                      INFO-GEN(1)
+
+NAME
+       info-gen - generate fake US Social Security Numbers, phone numbers, addresses, text with typos, and colors
+
+DESCRIPTION
+       info-gen generates fake but realistic US Social Security Numbers (SSNs),
+       phone numbers, addresses, text with realistic typos, and colors for testing purposes.
+       The tool intelligently uses reserved/invalid number ranges by default to ensure
+       generated values do not correspond to real people. For typo generation, it provides
+       various typo types based on common typing errors. For color generation, it uses a
+       database of over 30,000 color names from https://colornamer.robertcooper.me/ to
+       provide accurate color naming.
+
+       IMPORTANT: This script MUST be run via the makefile targets. Direct
+       invocation of main.py is NOT supported and will cause failures.
+
+       The makefile handles critical functionality including:
+         - Creating timestamped output directories (src/outputs/main/YYYY/MM/DD/HH-MM-SS/)
+         - Capturing all output to log.txt files via tee
+         - Ensuring the script can locate its output directory
+
+       If you run the script directly without the makefile:
+         - The script will attempt to find the latest output directory
+         - If no output directory exists for today's date, the script will CRASH
+           with a FileNotFoundError or AttributeError when scanning for directories
+         - If an old output directory exists from a previous run, the script will
+           incorrectly use that directory, potentially overwriting old logs or
+           causing confusion about which output corresponds to which run
+         - No log.txt file will be created, and all output will be lost to the
+           terminal with no persistent record
+
+       For SSNs, the tool uses reserved ranges (000, 666, 900-999) for the
+       first three digits when not specified. For phone numbers, it uses the
+       fictional range XXX-555-0100 to XXX-555-0199 when components are not
+       specified.
+
+       Address generation uses intelligent lookup to ensure consistency.
+       If a zip code is provided, the city/state will be derived from it
+       (if not already specified). If city/state are provided without a
+       zip, a matching zip code will be looked up. If a city is provided
+       without a state, states with that city will be looked up, and a
+       random one of those states will be selected (if none exist, random
+       state). Multiple matching zips result in random selection. Unmatched
+       values fall back to random generation with warnings.
+
+ARGUMENTS
+       --clean-dirty-colors, -cdc
+              If set, will clean up the file at `assets/colors-dirty.json` by
+              extracting valid color entries (and only the parts needed: name and rgb)
+              and writing them to `assets/colors.json`, then abort without running
+              further. This is a utility flag used to preprocess color data before
+              the main generation functionality.
+
+       TYPE
+              Type of identifier to generate. Must be one of:
+                ssn     - Generate Social Security Number(s)
+                phone   - Generate phone number(s)
+                address - Generate US address(es)
+                typos   - Generate text with realistic typos
+                color   - Generate random color(s) with names and formats
+              Default: ssn
+
+       COUNT
+              Number of identifiers to generate. Must be a positive integer.
+              Default: 1
+
+       --seed, -s SEED
+              Optional seed for random number generators. When specified, this integer
+              value seeds both the Python random module and the Faker library, producing
+              deterministic and reproducible results. Running the tool multiple times
+              with the same seed and arguments will generate identical output.
+
+              This is useful for:
+                - Testing and debugging (reproducible test data)
+                - Generating consistent datasets across multiple runs
+                - Creating reproducible examples and demonstrations
+
+              If not specified, a random seed is automatically generated using
+              os.urandom() and displayed in the output. This allows you to reproduce
+              the same results by copying the displayed seed value and using it in
+              subsequent runs with the --seed option.
+
+              The short form -s can be used interchangeably with --seed.
+
+       --seed-byte-size, -sb SIZE
+              Number of random bytes to use when automatically generating a seed
+              (only applies when --seed is not provided). The bytes are read from
+              os.urandom() and converted to an integer seed value.
+
+              Higher values provide more entropy for seed generation:
+                - 16 bytes = 128 bits of entropy (default)
+                - 32 bytes = 256 bits of entropy
+                - 8 bytes = 64 bits of entropy
+
+              This parameter has no effect when --seed is explicitly provided.
+              Default: 16
+
+              The short form -sb can be used interchangeably with --seed-byte-size.
+
+       --components, -c COMPONENTS...
+              Optional component values for the identifier. This flag specifies
+              custom patterns or fixed values for parts of the generated identifier.
+              If omitted, random values using reserved ranges are generated.
+
+              Components can be:
+                - Fixed values (use digits: "666", "555", "0100")
+                - Pattern values (use 'x' or non-digits for random: "xxx", "01xx")
+                - Omitted (use "none" or "null" to force random generation)
+
+              For SSN, up to three components are accepted:
+                START  - First 3 digits (000-999)
+                MID    - Middle 2 digits (00-99)
+                END    - Last 4 digits (0000-9999)
+
+              For PHONE, up to three components are accepted:
+                AREA    - Area code (200-999)
+                CENTRAL - Central office code (200-999)
+                LINE    - Line number (0000-9999)
+
+              Components can be specified space-separated or dash-separated.
+              Values outside valid ranges are automatically clamped.
+
+              The short form -c can be used interchangeably with --components.
+       --building_number BUILDING_NUMBER
+              For generating addresses, specify the building/house number.
+       --street STREET
+              For generating addresses, specify the street name.
+       --city CITY
+              For generating addresses, specify the city name.
+       --state STATE
+              For generating addresses, specify the state name or abbreviation. If
+              this is not a valid state, a random state will be generated instead.
+       --zip ZIP
+              For generating addresses, specify the ZIP code. If this is not a valid zip code, a
+              random zip code will be generated instead.
+       --no-state-abbr
+              For generating addresses, output the full state name instead of the abbreviation.
+       --no-existing-city
+              For generating addresses, instead of picking a city in a resolved state, generate a
+              completely random city name.
+
+       --text, -t TEXT
+              For generating typos, specify the text to apply typos to. Text should only
+              contain keyboard characters and spaces.
+              Default: "Example text for typo generation."
+
+       --typos, -ts TYPO_TYPES...
+              For generating typos, specify which typo types to apply. Multiple types can be
+              specified. Available types:
+                let-ins      - Insert random letters
+                let-sub      - Substitute letters with random letters
+                digit-ins    - Insert random digits
+                digit-sub    - Substitute characters with random digits
+                char-ins     - Insert random keyboard characters
+                char-sub     - Substitute with random keyboard characters
+                kb-ins       - Insert characters near the original key on keyboard
+                kb-sub       - Substitute with nearby keyboard keys
+                kb-ins-as    - Insert characters near the original key (account for shift)
+                kb-sub-as    - Substitute with nearby keyboard keys (account for shift)
+                trans        - Transpose adjacent characters
+                del          - Delete characters
+                case         - Change character case (upper/lower)
+                word-dup     - Duplicate entire words
+                dbl-miss     - Miss double letters (e.g., "letter" -> "leter")
+                dbl-ins      - Insert extra double letters (e.g., "letter" -> "lettter")
+                filler-ins   - Insert filler words (like, um, uh, etc.)
+                homophone    - Replace words with homophones (e.g., "their" -> "there")
+              Default: all types
+
+       --typo-weights, -tw WEIGHTS...
+              For generating typos, specify the relative weight for each typo type.
+              Weights should be positive integers corresponding to the order of types
+              specified in --typos. Higher weights make that typo type more likely.
+              If not specified, all types have equal weight (1).
+
+       --typo-rate, -tr RATE
+              For generating typos, specify the probability (0.0-1.0) of applying a typo
+              to each word in the text.
+              Default: 0.1
+
+       --typos-per-word, -tpw COUNT
+              For generating typos, specify the maximum number of typos to apply per word
+              when a word is selected for typo application.
+              Default: 1
+
+       --min-r VALUE
+              For generating colors, specify the minimum red value (0-255).
+              Default: 0
+
+       --max-r VALUE
+              For generating colors, specify the maximum red value (0-255).
+              Default: 255
+
+       --exact-r, -r VALUE
+              For generating colors, specify an exact red value (0-255).
+              If specified, overrides min-r and max-r for the red component.
+
+       --min-g VALUE
+              For generating colors, specify the minimum green value (0-255).
+              Default: 0
+
+       --max-g VALUE
+              For generating colors, specify the maximum green value (0-255).
+              Default: 255
+
+       --exact-g, -g VALUE
+              For generating colors, specify an exact green value (0-255).
+              If specified, overrides min-g and max-g for the green component.
+
+       --min-b VALUE
+              For generating colors, specify the minimum blue value (0-255).
+              Default: 0
+
+       --max-b VALUE
+              For generating colors, specify the maximum blue value (0-255).
+              Default: 255
+
+       --exact-b, -b VALUE
+              For generating colors, specify an exact blue value (0-255).
+              If specified, overrides min-b and max-b for the blue component.
+
+
+PATTERN SYSTEM
+       The tool supports a flexible pattern system for components:
+
+       Integer values
+              Exact digits are preserved: "666" generates "666"
+
+       Mixed patterns
+              Digits are preserved, non-digits become random:
+              "6x6" might generate "626", "646", "696", etc.
+              "01xx" might generate "0123", "0187", "0145", etc.
+
+       All non-digits
+              With no digits, generates completely random value in valid range:
+              "xxx" generates any 3-digit number (for SSN start: reserved only)
+              "xxxx" generates any 4-digit number
+
+RESERVED RANGES
+       SSN Reserved Values (used by default for START component):
+              000      - Invalid SSN
+              666      - Invalid SSN
+              900-999  - Invalid SSN range
+
+       Phone Reserved Range (used by default):
+              XXX-555-0100 through XXX-555-0199
+              This range is reserved for fictional use in North America.
+
+       Zip Codes:
+              The tool uses a database of valid US zip codes for address
+              generation and lookup. For random zip codes, all will be 5-digit
+              numbers with leading zeros as needed.
+
+WARNINGS
+       The tool issues warnings when generated values may correspond to real
+       people:
+
+       For SSNs:
+              If the START component (first 3 digits) is not in the reserved
+              range (000, 666, or 900-999), a warning is displayed.
+
+       For Phone Numbers:
+              If CENTRAL is not 555, a warning is displayed.
+              If CENTRAL is 555 but LINE is outside 0100-0199, a warning is
+              displayed.
+
+       For Addresses:
+              If both building_number and street are provided, a warning is
+              displayed since this may correspond to a real location.
+              If provided city/state/zip values are inconsistent, warnings are
+              shown but user-specified values are preserved.
+
+EXAMPLES
+       Clean the dirty colors file (utility operation):
+              make start ARGS="--clean-dirty-colors"
+
+       Generate one random SSN (uses reserved range):
+              make gen-ssn
+
+       Generate 5 random SSNs:
+              make gen-ssns ARGS="5"
+
+       Generate SSN with specific first part using --components:
+              make gen-ssn ARGS="--components 666"
+              make gen-ssn ARGS="-c 666 12 3456"
+              make gen-ssn ARGS="--components 666-12-3456"
+
+       Generate multiple SSNs with pattern (6 followed by two random digits):
+              make gen-ssns ARGS="10 --components 6xx"
+              make gen-ssns ARGS="10 -c 6xx"
+
+       Generate SSN with pattern for middle and end components:
+              make gen-ssn ARGS="-c 666 xx xxxx"
+
+       Generate one random phone number (uses 555 reserved range):
+              make gen-phone
+
+       Generate 10 random phone numbers:
+              make gen-phones ARGS="10"
+
+       Generate phone with specific components:
+              make gen-phone ARGS="--components 555 555 0100"
+              make gen-phone ARGS="-c 555-555-0100"
+
+       Generate multiple phones with random area code but reserved central/line:
+              make gen-phones ARGS="5 --components xxx 555 01xx"
+              make gen-phones ARGS="5 -c xxx 555 01xx"
+
+       Generate phone with specific area code, random central and line:
+              make gen-phone ARGS="-c 212"
+
+       Generate 100 completely random (but reserved) SSNs:
+              make gen-ssns ARGS="100"
+
+       Using the generic start target:
+              make start ARGS="ssn 5 --components 666-xx-xxxx"
+              make start ARGS="ssn 5 -c 666-xx-xxxx"
+              make start ARGS="phone 10 -c xxx-555-01xx"
+
+       Generate a random address:
+              make gen-address
+
+       Generate 5 random addresses:
+              make gen-addresses ARGS="5"
+
+       Generate address with specific city:
+              make gen-address ARGS="--city Boston"
+
+       Generate address with specific state:
+              make gen-address ARGS="--state California"
+              make gen-address ARGS="--state CA"
+
+       Generate address with specific zip code:
+              make gen-address ARGS="--zip 02101"
+
+       Generate address with city and state (zip will be looked up):
+              make gen-address ARGS="--city Cambridge --state MA"
+
+       Generate address with all components:
+              make gen-address ARGS="--building_number 123 --street 'Main St' --city Boston --state MA --zip 02101"
+
+       Generate 10 addresses in a specific city:
+              make gen-addresses ARGS="10 --city 'New York' --state NY"
+
+       Generate address with full state name instead of abbreviation:
+              make gen-address ARGS="--state California --no-state-abbr"
+
+       Using the generic start target for addresses:
+              make start ARGS="address 5 --city Seattle --state WA"
+
+       Generate text with default typos:
+              make gen-typos
+
+       Generate text with custom text:
+              make gen-typos ARGS="--text 'The quick brown fox jumps over the lazy dog'"
+              make gen-typos ARGS="-t 'Hello world this is a test'"
+
+       Generate multiple typo variations of the same text:
+              make gen-typos-multi ARGS="5 --text 'Testing typo generation'"
+
+       Generate text with specific typo types only:
+              make gen-typos ARGS="--text 'Sample text' --typos trans del case"
+              make gen-typos ARGS="-t 'Sample text' -ts kb-sub trans"
+
+       Generate text with weighted typo types (keyboard substitution weighted 5x more):
+              make gen-typos ARGS="--text 'Sample' --typos kb-sub trans --typo-weights 5 1"
+
+       Generate text with higher typo rate (50% of words get typos):
+              make gen-typos ARGS="--text 'Hello world' --typo-rate 0.5"
+              make gen-typos ARGS="-t 'Hello world' -tr 0.5"
+
+       Generate text with multiple typos per word:
+              make gen-typos ARGS="--text 'Testing' --typos-per-word 3"
+              make gen-typos ARGS="-t 'Testing' -tpw 3"
+
+       Using the generic start target for typos:
+              make start ARGS="typos 10 --text 'Test string' --typos kb-sub trans del"
+
+       Generate a random color:
+              make gen-color
+
+       Generate 5 random colors:
+              make gen-colors ARGS="5"
+
+       Generate a color with specific RGB values:
+              make gen-color ARGS="--exact-r 255 --exact-g 0 --exact-b 0"
+              make gen-color ARGS="-r 255 -g 0 -b 0"
+
+       Generate colors with red values between 200-255:
+              make gen-colors ARGS="10 --min-r 200 --max-r 255"
+
+       Generate colors with specific green and random red/blue:
+              make gen-color ARGS="--exact-g 128"
+              make gen-color ARGS="-g 128"
+
+       Generate multiple colors with constrained RGB ranges:
+              make gen-colors ARGS="20 --min-r 100 --max-r 200 --min-g 50 --max-g 150"
+
+       Using the generic start target for colors:
+              make start ARGS="color 5 --min-r 128 --max-r 255"
+
+       Generate deterministic results with a seed:
+              make gen-ssn ARGS="--seed 42"
+              make gen-ssns ARGS="5 --seed 12345"
+              make gen-phone ARGS="--seed 999"
+              make gen-addresses ARGS="10 --seed 7 --city Boston"
+              make gen-typos ARGS="--seed 100 --text 'Testing'"
+
+       Generate same results across multiple runs using the same seed:
+              make gen-ssns ARGS="3 --seed 42"
+              make gen-ssns ARGS="3 --seed 42"  # Will produce identical output
+
+       Reproduce results from a previous run:
+              # First run (no seed specified, auto-generated seed is displayed)
+              make gen-ssn
+              # Output shows: "No seed provided. Generated random seed 12345678... from 16 bytes of entropy."
+              # Later run (use the displayed seed to get the same result)
+              make gen-ssn ARGS="--seed 12345678..."
+
+       Use more entropy for automatic seed generation:
+              make gen-ssns ARGS="5 --seed-byte-size 32"  # 256 bits of entropy
+              make gen-addresses ARGS="10 -sb 8"  # 64 bits of entropy
+
+OUTPUT FORMAT
+       SSN Format:
+              XXX-XX-XXXX
+              Example: 666-12-3456
+
+       Phone Format:
+              (XXX) XXX-XXXX
+              Example: (555) 555-0100
+
+       Address Format:
+              BUILDING_NUMBER STREET, CITY STATE, ZIP
+              Example: 742 Evergreen Terrace, Springfield IL, 62701
+              With --no-state-abbr: 742 Evergreen Terrace, Springfield Illinois, 62701
+
+       Typos Format:
+              Modified text string with typos applied
+              Example input: "The quick brown fox"
+              Example output: "Teh qwick browwn foz"
+
+       Color Format:
+              COLOR_NAME - rgb(R, G, B), hex: #RRGGBB, hsl(H, S%, L%)
+              Example: Crimson Red - rgb(220, 20, 60), hex: #dc143c, hsl(348.00, 83.33%, 47.06%)
+
+       Output includes:
+              - Seed information (either "Using provided seed: X" or "No seed provided. Generated random seed X from Y bytes of entropy.")
+              - Transformation messages (when patterns are used for SSN/phone)
+              - Clamping messages (when values are out of range for SSN/phone)
+              - Location lookup messages (for addresses with --city/--state/--zip)
+              - Typo generation messages
+              - Warnings (when values may be real)
+              - Final results under "------- Output -------" header
+
+LOGGING
+       All output is automatically logged to a timestamped directory:
+              src/outputs/main/YYYY/MM/DD/HH-MM-SS/log.txt
+
+       This includes stdout, stderr, transformation messages, and warnings.
+       The makefile automatically creates this directory structure and uses
+       tee to display output to the console while simultaneously writing to
+       the log file.
+
+       CRITICAL: This logging functionality is ONLY available when running
+       via the makefile. Direct script invocation will either:
+         1. CRASH if no output directory exists for the current date
+         2. Use an incorrect/stale output directory from a previous run
+         3. Fail to create log.txt, losing all output permanently
+
+FILES
+       src/main.py
+              Main script containing generation logic
+
+       src/typo/main.py
+              Typo generator classes and logic
+
+       src/typo/vars.py
+              Character sets and variables used for typo generation
+
+       src/utils/colors.py
+              Color conversion utilities and color name database management
+              (over 30,000 color names from https://colornamer.robertcooper.me/)
+
+       src/utils/output.py
+              Utility functions for output directory management
+
+       src/utils/location.py
+              Functions for US location lookups (cities, states, zip codes)
+
+       makefile
+              Convenience targets for running the generator
+
+       make-man.txt
+              Documentation for makefile targets
+
+       src/man.txt
+              This manual page
+
+TYPO GENERATION SYSTEM
+       The typo generation system simulates realistic typing errors that humans make.
+       Each typo type represents a different kind of mistake:
+
+       Character-level typos:
+              - Insertions add extra characters (let-ins, digit-ins, char-ins, kb-ins, kb-ins-as)
+              - Substitutions replace characters (let-sub, digit-sub, char-sub, kb-sub, kb-sub-as)
+              - Deletions remove characters (del)
+              - Transpositions swap adjacent characters (trans)
+              - Case changes alter capitalization (case)
+
+       Keyboard-proximity typos:
+              - kb-ins, kb-sub: Use the physical keyboard layout to insert/substitute nearby keys
+              - kb-ins-as, kb-sub-as: Account for shift key state when choosing nearby keys
+
+       Word-level typos:
+              - word-dup: Repeats words (e.g., "the the cat")
+              - dbl-miss: Misses doubled letters (e.g., "book" -> "bok")
+              - dbl-ins: Adds extra doubled letters (e.g., "book" -> "boook")
+              - filler-ins: Inserts filler words like "um", "uh", "like"
+              - homophone: Replaces words with sound-alike alternatives (e.g., "their" -> "there")
+
+       Typo Distribution:
+              By default, all typo types have equal probability. Use --typo-weights to
+              adjust the likelihood of each type. For example, to make keyboard substitution
+              errors 3 times more likely than transpositions:
+              --typos kb-sub trans --typo-weights 3 1
+
+       Typo Rate:
+              The --typo-rate parameter controls what percentage of words receive typos.
+              A rate of 0.1 means roughly 10% of words will have typos applied.
+              A rate of 0.5 means roughly 50% of words will have typos applied.
+
+       Typos Per Word:
+              When a word is selected for typo application, --typos-per-word controls
+              the maximum number of typos that can be applied to that single word.
+              The actual number is randomly chosen between 1 and this maximum.
+
+COLOR GENERATION SYSTEM
+       The color generation system creates random colors with multiple representations
+       and human-readable names. Each generated color includes:
+
+       Color Formats:
+              - RGB (Red, Green, Blue): Values from 0-255 for each channel
+              - Hexadecimal: Six-digit hex code (e.g., #FF5733)
+              - HSL (Hue, Saturation, Lightness): Alternative color representation
+                useful for design work
+
+       Color Naming:
+              Colors are named using a database of over 30,000 color names from
+              https://colornamer.robertcooper.me/. The system finds the nearest
+              matching color name by calculating the Euclidean distance in RGB
+              color space.
+
+       RGB Constraints:
+              You can constrain the random color generation by specifying minimum
+              and maximum values for each RGB channel, or exact values to fix
+              specific channels while randomizing others. This is useful for:
+              - Generating colors within a specific palette
+              - Creating variations of a base color
+              - Ensuring colors meet specific brightness or saturation requirements
+
+       Example Use Cases:
+              - Generate shades of red: --min-r 200 --max-r 255 --max-g 100 --max-b 100
+              - Generate grayscale colors: Use equal min/max values for all channels
+              - Generate pastel colors: Use --min-r 200 --min-g 200 --min-b 200
+              - Fix one channel: --exact-r 255 (red at maximum, green/blue random)
+
+EXIT STATUS
+       0      Success
+
+       1      Error occurred:
+              - Invalid type specified (not 'ssn', 'phone', 'address', 'typos', or 'color')
+              - Invalid count (not a positive integer)
+              - Invalid text format (contains non-keyboard characters for typos)
+              - Invalid RGB value (not an integer between 0 and 255 for colors)
+
+NOTES
+       Required Usage:
+              ALWAYS use the makefile targets (make gen-ssn, make gen-ssns,
+              make gen-phone, make gen-phones, make gen-typos, make gen-typos-multi,
+              or make start). Direct invocation of the Python script is NOT supported.
+
+              Consequences of direct invocation:
+                - Script will crash if src/outputs/main/YYYY/MM/DD/ doesn't exist
+                - Script will use wrong directory if old outputs exist
+                - No log file will be created, output lost forever
+                - The get_latest_outputs_dir() function in utils.py expects the
+                  makefile to have already created the timestamped directory
+
+              The script's design assumes the makefile has run first to create
+              the proper directory structure. This is intentional - the makefile
+              is not optional tooling, it is a required part of the execution
+              environment.
+
+       Randomness:
+              The tool uses Python's random module and the Faker library for
+              random generation. For cryptographically secure random numbers,
+              the implementation would need modification.
+
+              Seed Behavior:
+              - If --seed is provided: Uses that exact seed value
+              - If --seed is not provided: Automatically generates a random seed
+                using os.urandom() and displays it in the output
+              - Either way, the seed is displayed so results can be reproduced
+
+              Use the --seed option to make output deterministic and reproducible.
+              The same seed value will always produce the same sequence of outputs.
+              Even when not providing a seed explicitly, the auto-generated seed
+              is shown in the output, allowing you to reproduce the same results
+              later by copying that seed value.
+
+       Validation:
+              Values are automatically clamped to valid ranges. For example,
+              SSN start values >999 are clamped to 999.
+
+       Real vs. Fake:
+              By default, the tool generates values that are guaranteed
+              or highly likely to be invalid/fictional. Override
+              components at your own risk and heed the warnings.
+
+       Dependencies:
+              The makefile uses 'uv' for Python environment management. Install
+              it with 'make uv-install' if not already available. 'uv' itself
+              handles all Python dependencies via the 'pyproject.toml' file.
+
+SEE ALSO
+       make-man.txt - Documentation for makefile targets
+       README.md - Project overview and setup instructions
+
+INFO-GEN                         January 2026                      INFO-GEN(1)
