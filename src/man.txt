@@ -9,8 +9,8 @@ DESCRIPTION
        The tool intelligently uses reserved/invalid number ranges by default to ensure
        generated values do not correspond to real people. For typo generation, it provides
        various typo types based on common typing errors. For color generation, it uses a
-       database of over 30,000 color names from https://colornamer.robertcooper.me/ to
-       provide accurate color naming.
+       database of color names (recommended to take from https://colornamer.robertcooper.me/
+       with over 30,000 color entries) to provide human-readable names for generated colors.
 
        IMPORTANT: This script MUST be run via the makefile targets. Direct
        invocation of main.py is NOT supported and will cause failures.
@@ -481,7 +481,6 @@ FILES
 
        src/utils/colors.py
               Color conversion utilities and color name database management
-              (over 30,000 color names from https://colornamer.robertcooper.me/)
 
        src/utils/output.py
               Utility functions for output directory management
@@ -547,24 +546,32 @@ COLOR GENERATION SYSTEM
                 useful for design work
 
        Color Naming:
-              Colors are named using a database of over 30,000 color names from
-              https://colornamer.robertcooper.me/. The system finds the nearest
+              The system finds the nearest
               matching color name by calculating the Euclidean distance in RGB
               color space.
 
-              The color database originates from the Color Namer project
+              The color database is recommended to originate from the Color Namer project
               (https://github.com/robertcoopercode/color-namer) and can be
-              obtained by querying: https://api.color.pizza/v1/?list=default
+              obtained by querying https://api.color.pizza/v1/?list=default
 
               Due to the large size of the color database files, they are not
-              included in the repository. To set up the color database:
-              1. Query the API endpoint to obtain the color data
-              2. Save the response to assets/colors-dirty.json
-              3. Run 'make start ARGS="--clean-dirty-colors"' to extract and
-                 process the color entries into assets/colors.json
+              included in the repository. It will be fetched automatically if
+              "assets/colors-dirty.json" is not present when cleaning colors.
 
-              The processed color database contains only the essential data
-              (name and RGB values) needed for color name lookups.
+              This means you can create your own color database file if desired, as long as it follows
+              the format:
+
+              {
+                     "colors": [
+                            {
+                                   "name": "Color Name",
+                                   "rgb": {"r": 255, "g": 0, "b": 0}
+                            },
+                            ...
+                     ]
+              }
+              
+              The tool will extract the "name" and "rgb" fields from each entry for its internal use.
 
        RGB Constraints:
               You can constrain the random color generation by specifying minimum
@@ -588,6 +595,7 @@ EXIT STATUS
               - Invalid count (not a positive integer)
               - Invalid text format (contains non-keyboard characters for typos)
               - Invalid RGB value (not an integer between 0 and 255 for colors)
+              - No "assets/colors.json" file found when generating colors
 
 NOTES
        Required Usage:

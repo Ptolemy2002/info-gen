@@ -546,9 +546,10 @@ def gen_color(
 
     hex: str = rgb_to_hex(rgb)
     hsl: HSL = rgb_to_hsl(rgb)
+    cmyk: CMYK = rgb_to_cmyk(rgb)
     name: str = nearest_color(rgb)
 
-    return f"{name} - rgb({rgb['r']}, {rgb['g']}, {rgb['b']}), hex: {hex}, hsl({hsl['h']:.2f}, {hsl['s']:.2f}%, {hsl['l']:.2f}%)"
+    return f"{name} - rgb({rgb['r']}, {rgb['g']}, {rgb['b']}), hex: {hex}, hsl({hsl['h']:.2f}, {hsl['s']:.2f}%, {hsl['l']:.2f}%), cmyk({cmyk['c']:.2f}%, {cmyk['m']:.2f}%, {cmyk['y']:.2f}%, {cmyk['k']:.2f}%)"
 
 def main(
         val_type: str = "ssn",

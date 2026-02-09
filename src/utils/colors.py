@@ -3,6 +3,9 @@ from scipy.spatial import KDTree
 from warnings import warn
 import json
 import random
+import os
+import requests
+import sys
 
 class RGB(TypedDict):
     r: int
@@ -14,13 +17,40 @@ class HSL(TypedDict):
     s: float
     l: float
 
+class CMYK(TypedDict):
+    c: float
+    m: float
+    y: float
+    k: float
+
+class DirtyColor(TypedDict):
+    name: str
+    rgb: RGB
+
 colors: dict[str, RGB] | None = None
 colors_tuples: list[tuple[int, int, int]] | None = None
 
 def clean_dirty_colors():
     # Get the current colors file, which is in the `assets` folder and is JSON.
     dirty_colors_path = "./src/assets/colors-dirty.json"
-    dirty_colors = json.load(open(dirty_colors_path, "r"))["colors"]
+    dirty_colors: list[DirtyColor] = []
+
+    if os.path.exists(dirty_colors_path):
+        with open(dirty_colors_path, "r") as f:
+            data = json.load(f)
+            dirty_colors = data.get("colors", [])
+    else:
+        # Fetch the colors from the API and save them to the dirty colors file.
+        print(f"Dirty colors file not found at {dirty_colors_path}. Fetching from API endpoint https://api.color.pizza/v1/?list=default")
+        response = requests.get("https://api.color.pizza/v1/?list=default")
+        if response.status_code == 200:
+            data = response.json()
+            dirty_colors = data.get("colors", [])
+            with open(dirty_colors_path, "w") as f:
+                json.dump({"colors": dirty_colors}, f)
+            print(f"Dirty colors fetched and saved to {dirty_colors_path}")
+        else:
+            warn(f"Failed to fetch colors from API. Status code: {response.status_code}. No colors will be available.")
 
     # Create a new list of colors with only the included keys.
     new_colors = []
@@ -47,6 +77,10 @@ def get_colors():
     if colors is not None:
         return colors
     
+    if not os.path.exists("./src/assets/colors.json"):
+        warn("Colors file not found. Please run clean_dirty_colors() to fetch and clean the color data.")
+        sys.exit(1)
+
     colors = {}
     with open("./src/assets/colors.json", "r") as f:
         """
@@ -145,6 +179,33 @@ def hsl_to_rgb(hsl: HSL) -> RGB:
         r = hue_to_rgb(p, q, h + 1/3)
         g = hue_to_rgb(p, q, h)
         b = hue_to_rgb(p, q, h - 1/3)
+
+    return {"r": r, "g": g, "b": b}
+
+def rgb_to_cmyk(rgb: RGB) -> CMYK:
+    r = rgb["r"] / 255.0
+    g = rgb["g"] / 255.0
+    b = rgb["b"] / 255.0
+
+    k = 1 - max(r, g, b)
+    if k == 1:
+        return {"c": 0, "m": 0, "y": 0, "k": 1}
+
+    c = (1 - r - k) / (1 - k)
+    m = (1 - g - k) / (1 - k)
+    y = (1 - b - k) / (1 - k)
+
+    return {"c": c * 100, "m": m * 100, "y": y * 100, "k": k * 100}
+
+def cmyk_to_rgb(cmyk: CMYK) -> RGB:
+    c = cmyk["c"] / 100.0
+    m = cmyk["m"] / 100.0
+    y = cmyk["y"] / 100.0
+    k = cmyk["k"] / 100.0
+
+    r = int(255 * (1 - c) * (1 - k))
+    g = int(255 * (1 - m) * (1 - k))
+    b = int(255 * (1 - y) * (1 - k))
 
     return {"r": r, "g": g, "b": b}
 

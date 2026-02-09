@@ -1,7 +1,7 @@
 import random
 import re
 import nltk
-from vars import *
+from typo.vars import *
 
 MEANINGFUL_WORD_CHAR_REGEX = re.compile(r'[a-zA-Z\-\']')
 
