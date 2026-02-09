@@ -552,6 +552,20 @@ COLOR GENERATION SYSTEM
               matching color name by calculating the Euclidean distance in RGB
               color space.
 
+              The color database originates from the Color Namer project
+              (https://github.com/robertcoopercode/color-namer) and can be
+              obtained by querying: https://api.color.pizza/v1/?list=default
+
+              Due to the large size of the color database files, they are not
+              included in the repository. To set up the color database:
+              1. Query the API endpoint to obtain the color data
+              2. Save the response to assets/colors-dirty.json
+              3. Run 'make start ARGS="--clean-dirty-colors"' to extract and
+                 process the color entries into assets/colors.json
+
+              The processed color database contains only the essential data
+              (name and RGB values) needed for color name lookups.
+
        RGB Constraints:
               You can constrain the random color generation by specifying minimum
               and maximum values for each RGB channel, or exact values to fix
