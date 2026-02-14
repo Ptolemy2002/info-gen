@@ -1,16 +1,12 @@
 import argparse
-import utils.output as output_utils
 import random
 import os
 import faker
-from utils.colors import clean_dirty_colors
 from warnings import warn
+import utils.output as output_utils
+from utils import clean_dirty_colors
+from generators import gen_ssn, gen_phone, gen_address, gen_typos, gen_color, AddressArgs, TypoArgs, ColorArgs, TYPO_GENERATORS
 from pytypes import *
-from generators.ssn import gen_ssn
-from generators.phone import gen_phone
-from generators.address import gen_address, AddressArgs
-from generators.typos import gen_typos, TYPO_GENERATORS, TypoArgs
-from generators.color import gen_color, ColorArgs
 
 # Put any files that are an output of the script here. "log.txt" will already exist.
 OUTPUTS_DIR = output_utils.get_latest_outputs_dir("main")

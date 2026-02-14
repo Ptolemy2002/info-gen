@@ -1,4 +1,3 @@
-from typing import TypedDict
 from scipy.spatial import KDTree
 from warnings import warn
 import json
@@ -6,7 +5,7 @@ import random
 import os
 import requests
 import sys
-from utils.types import *
+from .pytypes import *
 
 colors: dict[str, RGB] | None = None
 colors_tuples: list[tuple[int, int, int]] | None = None
@@ -190,16 +189,3 @@ def cmyk_to_rgb(cmyk: CMYK) -> RGB:
 
     return {"r": r, "g": g, "b": b}
 
-if __name__ == "__main__":
-    # Generate a random color and find the nearest color name
-    random_color: RGB = {
-        "r": random.randint(0, 255),
-        "g": random.randint(0, 255),
-        "b": random.randint(0, 255)
-    }
-
-    print(f"Random color: {random_color}")
-    print(f"Hex: {rgb_to_hex(random_color)}")
-    print(f"HSL: {rgb_to_hsl(random_color)}")
-
-    print(f"Nearest color name: {nearest_color(random_color)}")

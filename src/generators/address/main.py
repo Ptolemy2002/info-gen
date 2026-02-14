@@ -2,17 +2,10 @@ from warnings import warn
 import random
 import faker
 import utils.location as location_utils
-from typing import TypedDict, NotRequired
+from .pytypes import AddressArgs
 
 ZIPCODE_MIN = 0
 ZIPCODE_MAX = 99999
-
-class AddressArgs(TypedDict):
-    building_number: NotRequired[str | None]
-    street: NotRequired[str | None]
-    city: NotRequired[str | None]
-    state: NotRequired[str | None]
-    zip: NotRequired[str | None]
 
 def gen_address(data: AddressArgs={}, state_abbr: bool = True, existing_city: bool = True, log: bool = False) -> str:
     """

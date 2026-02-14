@@ -479,14 +479,59 @@ FILES
        src/typo/vars.py
               Character sets and variables used for typo generation
 
-       src/utils/colors.py
-              Color conversion utilities and color name database management
+       src/typo/vars.py
+              Character sets and variables used for typo generation
 
        src/utils/output.py
               Utility functions for output directory management
 
        src/utils/location.py
               Functions for US location lookups (cities, states, zip codes)
+
+       src/utils/math.py
+              Utility functions for math operations (e.g., clamping, random selection)
+
+       src/utils/component.py
+              Functions for parsing and applying component patterns
+
+       src/utils/colors/main.py
+              Color conversion utilities and color name database management
+
+       src/utils/colors/types.py
+              Color data types and classes
+       
+       src/typo_test.py
+              Test script for typo generation functionality
+       
+       src/colors_test.py
+              Test script for color generation functionality
+       
+       src/location_test.py
+              Test script for location lookup functionality
+
+       generators/phone.py
+              Functions for generating phone numbers
+       
+       generators/ssn.py
+              Functions for generating Social Security Numbers
+
+       generators/address/main.py
+              Functions for generating US addresses
+
+       generators/address/types.py
+              Address data types and classes
+       
+       generators/typos/main.py
+              Functions for generating text with typos
+
+       generators/typos/types.py
+              Typo data types and classes
+
+       generators/colors/main.py
+              Functions for generating random colors and finding nearest color names
+       
+       generators/colors/types.py
+              Color data types and classes
 
        makefile
               Convenience targets for running the generator
@@ -607,7 +652,7 @@ NOTES
                 - Script will crash if src/outputs/main/YYYY/MM/DD/ doesn't exist
                 - Script will use wrong directory if old outputs exist
                 - No log file will be created, output lost forever
-                - The get_latest_outputs_dir() function in utils.py expects the
+                - The get_latest_outputs_dir() function in utils/output.py expects the
                   makefile to have already created the timestamped directory
 
               The script's design assumes the makefile has run first to create

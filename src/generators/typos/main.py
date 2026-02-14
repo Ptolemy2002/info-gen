@@ -1,6 +1,5 @@
-from typo.main import *
-from typo.vars import letters, digits, all_characters, filler_words
-from utils.math import rand_pick_dstrb
+from typo import *
+from utils import rand_pick_dstrb
 
 # Set of available typo generators
 TYPO_GENERATORS: dict[str, TypoGenerator] = {
@@ -31,13 +30,6 @@ TYPO_GENERATORS: dict[str, TypoGenerator] = {
 
     "homophone": TypoHomophoneGenerator()
 }
-
-class TypoArgs(TypedDict):
-    text: str
-    typos: list[str]
-    typo_weights: list[int]
-    typo_rate: float
-    typos_per_word: int
 
 def gen_typos(text: str, typo_distrb: list[tuple[int, str]], rate: float=0.1, typos_per_word: int=1, log: bool = False) -> str:
     words = process_words(text)

@@ -1,7 +1,6 @@
 import random
 from warnings import warn
-from utils.math import clamp, randint_from_input
-from utils.component import format_component
+from utils import clamp, randint_from_input, format_component
 
 SSN_START_MIN = 0
 SSN_START_MAX = 999

@@ -47,19 +47,19 @@ reset
            Use this to restore the project to a clean state
 
 lu-test
-  Description: Runs the utils/location.py script for testing
+  Description: Runs the location_test.py script for testing
   Usage: make lu-test
-  Details: Executes utils/location.py using uv
+  Details: Executes location_test.py using uv
 
 typo-test
-  Description: Runs the typo/main.py script for testing
+  Description: Runs the typo_test.py script for testing
   Usage: make typo-test
-  Details: Executes typo/main.py using uv
+  Details: Executes typo_test.py using uv
 
 colors-test
-  Description: Runs the utils/colors.py script for testing
+  Description: Runs the colors_test.py script for testing
   Usage: make colors-test
-  Details: Executes utils/colors.py using uv
+  Details: Executes colors_test.py using uv
 
 start
   Description: Runs the main Python script with logging

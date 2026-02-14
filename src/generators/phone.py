@@ -1,7 +1,6 @@
 import random
 from warnings import warn
-from utils.math import clamp, randint_from_input
-from utils.component import format_component
+from utils import clamp, randint_from_input, format_component
 
 AREA_CODE_MIN = 200
 AREA_CODE_MAX = 999

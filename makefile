@@ -30,13 +30,13 @@ rm-venv:
 reset: rmzi rm-lock rm-outputs rm-pycache rm-venv
 
 lu-test:
-	uv run ./src/utils/location.py
+	uv run ./src/location_test.py
 
 typo-test:
-	uv run ./src/typo/main.py
+	uv run ./src/typo_test.py
 
 colors-test:
-	uv run ./src/utils/colors.py
+	uv run ./src/colors_test.py
 
 start:
 	mkdir -p $(MAIN_OUTPUT_DIR) && \

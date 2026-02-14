@@ -1,4 +1,4 @@
-from utils.math import clamp, randint_from_input
+from .math import clamp, randint_from_input
 from typing import Callable
 
 def format_component(

@@ -1,4 +1,4 @@
-from typo.types import *
+from .pytypes import *
 
 low_letters = "abcdefghijklmnopqrstuvwxyz"
 cap_letters = low_letters.upper()
