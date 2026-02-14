@@ -121,6 +121,15 @@ gen-color
     make gen-color
     make gen-color ARGS="additional options"
 
+gen-name
+  Description: Generates a single name value
+  Usage: make gen-name [ARGS="arguments"]
+  Details: Convenience target that calls main.py to generate 1 name value
+           Additional arguments can be specified for name generation
+  Examples:
+    make gen-name
+    make gen-name ARGS="additional options"
+
 gen-ssns
   Description: Generates multiple SSNs
   Usage: make gen-ssns ARGS="count [component values]"
@@ -165,6 +174,15 @@ gen-colors
   Examples:
     make gen-colors ARGS="10"
     make gen-colors ARGS="5 additional options"
+
+gen-names
+  Description: Generates multiple name values
+  Usage: make gen-names ARGS="count [arguments]"
+  Details: Convenience target that calls main.py to generate multiple name values
+           First argument is the count, followed by optional arguments for name generation
+  Examples:
+    make gen-names ARGS="10"
+    make gen-names ARGS="5 additional options"
 
 clean-dirty-colors
   Description: Cleans the colors-dirty.json file and creates a clean colors.json. Both files will be in the assets directory.

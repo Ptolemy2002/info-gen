@@ -1,4 +1,4 @@
-.PHONY: dep-install uv-install rmzi rm-lock rm-outputs rm-pycache rm-venv reset lu-test typo-test colors-test start gen-ssn gen-phone gen-typos gen-ssns gen-phones gen-typos-multi clean-dirty-colors help make-help
+.PHONY: dep-install uv-install rmzi rm-lock rm-outputs rm-pycache rm-venv reset lu-test typo-test colors-test start gen-ssn gen-phone gen-typos, gen-name gen-ssns gen-phones gen-typos-multi, gen-names clean-dirty-colors help make-help
 
 DATE := $(shell date '+%Y/%m/%d')
 TIME := $(shell date '+%H-%M-%S')
@@ -58,6 +58,9 @@ gen-typos: start
 gen-color: FULL_ARGS = color 1 $(ARGS)
 gen-color: start
 
+gen-name: FULL_ARGS = name 1 $(ARGS)
+gen-name: start
+
 gen-ssns: FULL_ARGS = ssn $(ARGS)
 gen-ssns: start
 
@@ -72,6 +75,9 @@ gen-typos-multi: start
 
 gen-colors: FULL_ARGS = color $(ARGS)
 gen-colors: start
+
+gen-names: FULL_ARGS = name $(ARGS)
+gen-names: start
 
 clean-dirty-colors: FULL_ARGS = --clean-dirty-colors $(ARGS)
 clean-dirty-colors: start

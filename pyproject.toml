@@ -13,4 +13,6 @@ dependencies = [
     "faker>=40.1.2",
     "nltk>=3.9.2",
     "scipy>=1.17.0",
+    "faker-music>=0.4",
+    "faker-vehicle>=0.2.0",
 ]

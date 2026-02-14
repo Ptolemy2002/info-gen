@@ -101,6 +101,27 @@ wheels = [
 ]
 
 [[package]]
+name = "faker-music"
+version = "0.4"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/51/ba/601f53ce5bfa6cd9e3efbb67a697d23658a30de43b9183acd2c626c155e6/faker_music-0.4.tar.gz", hash = "sha256:119293298f29c77994675e3f5dfeb7d065ef24aeb84810eb0bd2846b38fb59e7", size = 15268, upload-time = "2021-05-25T11:05:30.895Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/1c/35/6a6a2717a0a6e5ef04b27b11f09a70b3cfbd12cc656495f1261bee429dcc/faker_music-0.4-py2.py3-none-any.whl", hash = "sha256:7ad13d9a085cccc87d2b1f0510ff8a95c2176b41122ae289d38c321dbc29d8f2", size = 14930, upload-time = "2021-05-25T11:05:08.527Z" },
+]
+
+[[package]]
+name = "faker-vehicle"
+version = "0.2.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "faker" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/a3/f9/3432a540a3b6599b7365190df1030aaf93cb7c0113d2528b55511c6a48de/faker_vehicle-0.2.0.tar.gz", hash = "sha256:3a7f1065da54b998f8875785282d3b1da4a422bc14fe0776a4a4ff4c1872a3b5", size = 149620, upload-time = "2020-11-13T19:53:02.537Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/12/92/906adbed8dd2a240ecd878032be13a754df53b0389e9825cd557814c7f60/faker_vehicle-0.2.0-py2.py3-none-any.whl", hash = "sha256:30fa5eb81da17d6483be545431a9b51f76f2b6731ac3ee9c2e038560fca58e4a", size = 162355, upload-time = "2020-11-13T19:53:01.266Z" },
+]
+
+[[package]]
 name = "fuzzywuzzy"
 version = "0.18.0"
 source = { registry = "https://pypi.org/simple" }
@@ -168,6 +189,8 @@ source = { virtual = "." }
 dependencies = [
     { name = "colorama" },
     { name = "faker" },
+    { name = "faker-music" },
+    { name = "faker-vehicle" },
     { name = "nltk" },
     { name = "python-levenshtein" },
     { name = "scipy" },
@@ -180,6 +203,8 @@ dependencies = [
 requires-dist = [
     { name = "colorama", specifier = ">=0.4.6" },
     { name = "faker", specifier = ">=40.1.2" },
+    { name = "faker-music", specifier = ">=0.4" },
+    { name = "faker-vehicle", specifier = ">=0.2.0" },
     { name = "nltk", specifier = ">=3.9.2" },
     { name = "python-levenshtein", specifier = ">=0.27.3" },
     { name = "scipy", specifier = ">=1.17.0" },

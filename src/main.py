@@ -5,7 +5,9 @@ import faker
 from warnings import warn
 import utils.output as output_utils
 from utils import clean_dirty_colors
-from generators import gen_ssn, gen_phone, gen_address, gen_typos, gen_color, AddressArgs, TypoArgs, ColorArgs, TYPO_GENERATORS
+from generators import gen_ssn, gen_phone, gen_name, gen_address, gen_typos, gen_color, \
+                       AddressArgs, TypoArgs, ColorArgs, NameArgs, TYPO_GENERATORS, NAME_TYPES, \
+                       FILE_CATEGORIES, EMAIL_CATEGORIES, MUSIC_GENRES, INSTRUMENT_CATEGORIES
 from pytypes import *
 
 # Put any files that are an output of the script here. "log.txt" will already exist.
@@ -25,7 +27,9 @@ def main(
             'typo_rate': 0.1,
             'typos_per_word': 1
         },
-        color_args: ColorArgs = {}
+        color_args: ColorArgs = {},
+        name_args: NameArgs = {},
+        name_type: str = "person"
     ):
     if components is None:
         components = []
@@ -66,6 +70,10 @@ def main(
         for _ in range(count):
             results.append(gen_color(color_args, log=True))
 
+    if val_type == "name":
+        for _ in range(count):
+            results.append(gen_name(name_type, name_args, log=True))
+
     print("------- Output -------")
     for result in results:
         print(result)
@@ -85,7 +93,7 @@ if __name__ == "__main__":
 
     parser.add_argument(
         'type',
-        choices=['ssn', 'phone', 'address', 'typos', 'color'],
+        choices=['ssn', 'phone', 'address', 'typos', 'color', 'name'],
         default='ssn',
         nargs='?',
         help="Type of information to generate (default: ssn)"
@@ -131,11 +139,11 @@ if __name__ == "__main__":
     )
 
     # Specific arguments for address generation
-    parser.add_argument('--building_number', help="Building number for address")
-    parser.add_argument('--street', help="Street name for address")
-    parser.add_argument('--city', help="City name for address")
-    parser.add_argument('--state', help="State abbreviation for address")
-    parser.add_argument('--zip', help="ZIP code for address")
+    parser.add_argument('--building_number', '-bn', help="Building number for address")
+    parser.add_argument('--street', '-ste', help="Street name for address")
+    parser.add_argument('--city', '-ci', help="City name for address")
+    parser.add_argument('--state', '-st', help="State abbreviation for address")
+    parser.add_argument('--zip', '-z', help="ZIP code for address")
     parser.add_argument('--no-state-abbr', action='store_true', help="Do not convert state names to abbreviations")
     parser.add_argument('--no-existing-city', action='store_true', help="Do not use existing city names; generate random city names instead")
 
@@ -165,15 +173,59 @@ if __name__ == "__main__":
     parser.add_argument('--typos-per-word', '-tpw', type=int, default=1, help="Maximum number of typos to apply per word (default: 1)")
     
     # Specific arguments for color generation
-    parser.add_argument('--min-r', type=rgb_bound_type, default=0, help="Minimum red value for color generation (0-255, default: 0)")
-    parser.add_argument('--max-r', type=rgb_bound_type, default=255, help="Maximum red value for color generation (0-255, default: 255)")
+    parser.add_argument('--min-r', '-mnr', type=rgb_bound_type, default=0, help="Minimum red value for color generation (0-255, default: 0)")
+    parser.add_argument('--max-r', '-mxr', type=rgb_bound_type, default=255, help="Maximum red value for color generation (0-255, default: 255)")
     parser.add_argument('--exact-r', '-r', type=rgb_bound_type, default=None, help="Exact red value for color generation (0-255). If specified, overrides min and max red values.")
-    parser.add_argument('--min-g', type=rgb_bound_type, default=0, help="Minimum green value for color generation (0-255, default: 0)")
-    parser.add_argument('--max-g', type=rgb_bound_type, default=255, help="Maximum green value for color generation (0-255, default: 255)")
+    parser.add_argument('--min-g', '-mng', type=rgb_bound_type, default=0, help="Minimum green value for color generation (0-255, default: 0)")
+    parser.add_argument('--max-g', '-mxg', type=rgb_bound_type, default=255, help="Maximum green value for color generation (0-255, default: 255)")
     parser.add_argument('--exact-g', '-g', type=rgb_bound_type, default=None, help="Exact green value for color generation (0-255). If specified, overrides min and max green values.")
-    parser.add_argument('--min-b', type=rgb_bound_type, default=0, help="Minimum blue value for color generation (0-255, default: 0)")
-    parser.add_argument('--max-b', type=rgb_bound_type, default=255, help="Maximum blue value for color generation (0-255, default: 255)")
+    parser.add_argument('--min-b', '-mnb', type=rgb_bound_type, default=0, help="Minimum blue value for color generation (0-255, default: 0)")
+    parser.add_argument('--max-b', '-mxb', type=rgb_bound_type, default=255, help="Maximum blue value for color generation (0-255, default: 255)")
     parser.add_argument('--exact-b', '-b', type=rgb_bound_type, default=None, help="Exact blue value for color generation (0-255). If specified, overrides min and max blue values.")
+
+    # Specific arguments for name generation
+    parser.add_argument(
+        '--name-type', '-nt',
+        choices=NAME_TYPES,
+        default='person',
+        help="Type of name to generate (default: person)"
+    )
+    parser.add_argument('--first-name', '-fn', help="First name to use for person name generation")
+    parser.add_argument('--last-name', '-ln', help="Last name to use for person name generation")
+    parser.add_argument(
+        '--gender', '-ge',
+        choices=['male', 'female', 'nb'],
+        default=None,
+        help="Gender for person/job name generation (default: random)"
+    )
+    parser.add_argument(
+        '--file-category', '-fc',
+        choices=FILE_CATEGORIES,
+        default=None,
+        help="File category for file_name generation"
+    )
+    parser.add_argument('--file-type', '-ft', help="File extension for file_name generation (overrides --file-category)")
+    parser.add_argument(
+        '--email-category', '-ec',
+        choices=EMAIL_CATEGORIES,
+        default=None,
+        help="Email category for email generation"
+    )
+    parser.add_argument('--subdomains', '-sd', type=subdomain_count_type, default=1, help="Number of subdomains for website generation (default: 1)")
+    parser.add_argument(
+        '--parent-music-genre', '-pmg',
+        choices=MUSIC_GENRES,
+        default=None,
+        type=case_insensitive_choice_type(MUSIC_GENRES),
+        help="Parent music genre for music_genre generation"
+    )
+    parser.add_argument(
+        '--music-instrument-category', '-mic',
+        choices=INSTRUMENT_CATEGORIES,
+        default=None,
+        type=case_insensitive_choice_type(INSTRUMENT_CATEGORIES),
+        help="Instrument category for music_instrument generation"
+    )
 
     # Argument processing
     args = parser.parse_args()
@@ -192,6 +244,12 @@ if __name__ == "__main__":
         print(f"No seed provided. Generated random seed {seed} from {args.seed_byte_size} bytes of entropy.")
         faker.Faker.seed(seed)
         random.seed(seed)
+
+    if args.type == 'color':
+        warn("Color generation will pick random values, but all will correspond to an actual color.")
+
+    if args.type == 'name' and args.name_type in ['job', 'music_genre', 'music_instrument', 'vehicle']:
+        warn(f"{args.name_type} generation will pick random values, but all will correspond to real entries in the Faker database for that category.")
 
     address_args: AddressArgs = {
         'building_number': str(args.building_number) if args.building_number is not None else None,
@@ -223,4 +281,35 @@ if __name__ == "__main__":
             else:
                 components.append(component)
 
-    main(args.type, args.count, components, address_args, not args.no_state_abbr, not args.no_existing_city, typo_args)
+    color_args: ColorArgs = {
+        'min_r': args.min_r,
+        'max_r': args.max_r,
+        'exact_r': args.exact_r,
+        'min_g': args.min_g,
+        'max_g': args.max_g,
+        'exact_g': args.exact_g,
+        'min_b': args.min_b,
+        'max_b': args.max_b,
+        'exact_b': args.exact_b,
+    }
+
+    name_args: NameArgs = {}
+    if args.first_name is not None:
+        name_args['first_name'] = args.first_name
+    if args.last_name is not None:
+        name_args['last_name'] = args.last_name
+    if args.gender is not None:
+        name_args['gender'] = args.gender
+    if args.file_category is not None:
+        name_args['file_category'] = args.file_category
+    if args.file_type is not None:
+        name_args['file_type'] = args.file_type
+    if args.email_category is not None:
+        name_args['email_category'] = args.email_category
+    name_args['subdomains'] = args.subdomains
+    if args.parent_music_genre is not None:
+        name_args['music_genre'] = args.parent_music_genre
+    if args.music_instrument_category is not None:
+        name_args['music_instrument_category'] = args.music_instrument_category
+
+    main(args.type, args.count, components, address_args, not args.no_state_abbr, not args.no_existing_city, typo_args, color_args, name_args=name_args, name_type=args.name_type)

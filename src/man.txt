@@ -1,16 +1,20 @@
 INFO-GEN(1)                       User Commands                      INFO-GEN(1)
 
 NAME
-       info-gen - generate fake US Social Security Numbers, phone numbers, addresses, text with typos, and colors
+       info-gen - generate fake US Social Security Numbers, phone numbers, addresses, text with typos, colors, and names
 
 DESCRIPTION
        info-gen generates fake but realistic US Social Security Numbers (SSNs),
-       phone numbers, addresses, text with realistic typos, and colors for testing purposes.
-       The tool intelligently uses reserved/invalid number ranges by default to ensure
-       generated values do not correspond to real people. For typo generation, it provides
-       various typo types based on common typing errors. For color generation, it uses a
-       database of color names (recommended to take from https://colornamer.robertcooper.me/
-       with over 30,000 color entries) to provide human-readable names for generated colors.
+       phone numbers, addresses, text with realistic typos, colors, and names
+       for testing purposes. The tool intelligently uses reserved/invalid number
+       ranges by default to ensure generated values do not correspond to real
+       people. For typo generation, it provides various typo types based on
+       common typing errors. For color generation, it uses a database of color
+       names (recommended to take from https://colornamer.robertcooper.me/ with
+       over 30,000 color entries) to provide human-readable names for generated
+       colors. For name generation, it uses the Faker library (with additional
+       providers for music and vehicles) to generate realistic names across
+       many categories including people, companies, files, emails, and more.
 
        IMPORTANT: This script MUST be run via the makefile targets. Direct
        invocation of main.py is NOT supported and will cause failures.
@@ -59,6 +63,7 @@ ARGUMENTS
                 address - Generate US address(es)
                 typos   - Generate text with realistic typos
                 color   - Generate random color(s) with names and formats
+                name    - Generate name(s) (people, companies, files, etc.)
               Default: ssn
 
        COUNT
@@ -220,6 +225,68 @@ ARGUMENTS
               For generating colors, specify an exact blue value (0-255).
               If specified, overrides min-b and max-b for the blue component.
 
+       --name-type, -nt NAME_TYPE
+              For generating names, specify the type of name to generate.
+              Must be one of:
+                company          - Generate a company name
+                file_name        - Generate a file name with extension
+                email            - Generate an email address
+                website          - Generate a website domain name
+                user_name        - Generate a username
+                job              - Generate a job title
+                person           - Generate a person's full name
+                music_genre      - Generate a music genre/subgenre
+                music_instrument - Generate a musical instrument name
+                vehicle          - Generate a vehicle year/make/model
+              Default: person
+
+       --first-name, -fn FIRST_NAME
+              For generating person names, specify the first name to use.
+              If not specified, a random first name is generated based on gender.
+
+       --last-name, -ln LAST_NAME
+              For generating person names, specify the last name to use.
+              If not specified, a random last name is generated based on gender.
+
+       --gender, -ge GENDER
+              For generating person or job names, specify the gender.
+              Must be one of: male, female, nb
+              For person names, "nb" generates a non-binary name.
+              For job names, "nb" selects a random gender internally.
+              If not specified, a random gender is chosen.
+
+       --file-category, -fc CATEGORY
+              For generating file names, specify the file category.
+              Must be one of: audio, image, office, text, video
+              If not specified, a random category is chosen.
+              Ignored if --file-type is also provided.
+
+       --file-type, -ft EXTENSION
+              For generating file names, specify the file extension directly.
+              Overrides --file-category if both are provided.
+
+       --email-category, -ec CATEGORY
+              For generating email addresses, specify the email category.
+              Must be one of: company, personal
+              If not specified, a random category is chosen.
+
+       --subdomains, -sd COUNT
+              For generating website domain names, specify the number of
+              subdomains to include.
+              Must be a positive integer.
+              Default: 1
+
+       --parent-music-genre, -pmg GENRE
+              For generating music genres, specify the parent genre to select
+              a subgenre from. The value is matched case-insensitively against
+              the available parent genres from the faker-music library.
+              If not specified, a random parent genre is chosen.
+
+       --music-instrument-category, -mic CATEGORY
+              For generating musical instruments, specify the instrument
+              category. The value is matched case-insensitively against the
+              available categories from the faker-music library.
+              If not specified, a random category is chosen.
 
 PATTERN SYSTEM
        The tool supports a flexible pattern system for components:
@@ -270,6 +337,22 @@ WARNINGS
               displayed since this may correspond to a real location.
               If provided city/state/zip values are inconsistent, warnings are
               shown but user-specified values are preserved.
+
+       For Names (job, music_genre, music_instrument, vehicle):
+              These name types are picked from existing databases provided by
+              the Faker library and its additional providers (faker-music,
+              faker-vehicle). Unlike SSNs and phone numbers, which use reserved
+              ranges, these values are drawn from real-world data and will
+              correspond to real job titles, music genres, musical instruments,
+              and vehicle makes/models. They cannot benefit from the same
+              guarantee of not matching anything real.
+
+       For Colors:
+              All generated colors correspond to real RGB values, but the
+              color name is based on the nearest match in the color database,
+              so the name may not perfectly describe the generated color. No
+              warnings are issued for colors since they do not correspond to
+              real entities in the same way as SSNs or phone numbers.
 
 EXAMPLES
        Clean the dirty colors file (utility operation):
@@ -400,6 +483,59 @@ EXAMPLES
        Using the generic start target for colors:
               make start ARGS="color 5 --min-r 128 --max-r 255"
 
+       Generate a random person name:
+              make gen-name
+
+       Generate 5 random person names:
+              make gen-names ARGS="5"
+
+       Generate a person name with a specific gender:
+              make gen-name ARGS="--gender female"
+              make gen-name ARGS="-ge male"
+
+       Generate a person name with a specific first name:
+              make gen-name ARGS="--first-name Alice"
+              make gen-name ARGS="-fn Bob"
+
+       Generate a person name with both first and last name specified:
+              make gen-name ARGS="--first-name Alice --last-name Smith"
+
+       Generate a company name:
+              make gen-name ARGS="--name-type company"
+              make gen-name ARGS="-nt company"
+
+       Generate a file name with a specific category:
+              make gen-name ARGS="-nt file_name --file-category image"
+              make gen-name ARGS="-nt file_name -fc audio"
+
+       Generate a file name with a specific extension:
+              make gen-name ARGS="-nt file_name --file-type .csv"
+
+       Generate an email address:
+              make gen-name ARGS="-nt email --email-category personal"
+              make gen-name ARGS="-nt email -ec company"
+
+       Generate a website domain name with subdomains:
+              make gen-name ARGS="-nt website --subdomains 3"
+
+       Generate a job title with a specific gender:
+              make gen-name ARGS="-nt job --gender female"
+
+       Generate a music genre from a specific parent genre:
+              make gen-name ARGS="-nt music_genre --parent-music-genre Rock"
+
+       Generate a musical instrument from a specific category:
+              make gen-name ARGS="-nt music_instrument --music-instrument-category Strings"
+
+       Generate a vehicle name:
+              make gen-name ARGS="-nt vehicle"
+
+       Generate 10 random names of various types:
+              make gen-names ARGS="10 --name-type company"
+
+       Using the generic start target for names:
+              make start ARGS="name 5 --name-type person --gender female"
+
        Generate deterministic results with a seed:
               make gen-ssn ARGS="--seed 42"
               make gen-ssns ARGS="5 --seed 12345"
@@ -442,8 +578,21 @@ OUTPUT FORMAT
               Example output: "Teh qwick browwn foz"
 
        Color Format:
-              COLOR_NAME - rgb(R, G, B), hex: #RRGGBB, hsl(H, S%, L%)
-              Example: Crimson Red - rgb(220, 20, 60), hex: #dc143c, hsl(348.00, 83.33%, 47.06%)
+              COLOR_NAME - rgb(R, G, B), hex: #RRGGBB, hsl(H, S%, L%), cmyk(C%, M%, Y%, K%)
+              Example: Crimson Red - rgb(220, 20, 60), hex: #dc143c, hsl(348.00, 83.33%, 47.06%), cmyk(0.00%, 90.91%, 72.73%, 13.73%)
+
+       Name Format:
+              The output format varies by name type:
+                person           - FIRST_NAME LAST_NAME (e.g., "Alice Smith")
+                company          - Company name string (e.g., "Smith LLC")
+                file_name        - Filename with extension (e.g., "report.pdf")
+                email            - Email address (e.g., "alice@example.com")
+                website          - Domain name (e.g., "example.com")
+                user_name        - Username string (e.g., "alice_smith")
+                job              - Job title string (e.g., "Software Engineer")
+                music_genre      - Genre/subgenre string (e.g., "Progressive Rock")
+                music_instrument - Instrument name (e.g., "Violin")
+                vehicle          - Year make model (e.g., "2020 Toyota Camry")
 
        Output includes:
               - Seed information (either "Using provided seed: X" or "No seed provided. Generated random seed X from Y bytes of entropy.")
@@ -451,6 +600,7 @@ OUTPUT FORMAT
               - Clamping messages (when values are out of range for SSN/phone)
               - Location lookup messages (for addresses with --city/--state/--zip)
               - Typo generation messages
+              - Name generation messages (category selection, gender, etc.)
               - Warnings (when values may be real)
               - Final results under "------- Output -------" header
 
@@ -529,9 +679,22 @@ FILES
 
        generators/colors/main.py
               Functions for generating random colors and finding nearest color names
-       
+
        generators/colors/types.py
               Color data types and classes
+
+       generators/name/main.py
+              Functions for generating names across various categories
+
+       generators/name/pytypes.py
+              Name argument data types and classes
+
+       generators/name/vars.py
+              Name type lists, file categories, email categories, music genres,
+              and instrument categories
+
+       src/fake.py
+              Shared Faker instance holder with provider registration
 
        makefile
               Convenience targets for running the generator
@@ -632,11 +795,64 @@ COLOR GENERATION SYSTEM
               - Generate pastel colors: Use --min-r 200 --min-g 200 --min-b 200
               - Fix one channel: --exact-r 255 (red at maximum, green/blue random)
 
+NAME GENERATION SYSTEM
+       The name generation system uses the Faker library with additional providers
+       to generate realistic names across many categories. A shared Faker instance
+       (configured for the en_US locale) is used with the following providers:
+       company, file, internet, person, job, faker-music, and faker-vehicle.
+
+       Name Types:
+
+       Simple types (no additional arguments):
+              - company: Generates a company name
+              - user_name: Generates a username
+              - vehicle: Generates a vehicle year/make/model string
+
+       Person names:
+              Generated as "FIRST_NAME LAST_NAME". Both the first and last name
+              can be specified via --first-name and --last-name. If not provided,
+              they are randomly generated based on --gender. Gender can be "male",
+              "female", or "nb" (non-binary). If no gender is specified, one is
+              randomly chosen from all three options.
+
+       Job titles:
+              Respects the --gender argument. If gender is "nb" or not specified,
+              a random binary gender (male/female) is chosen internally since the
+              Faker library supports gendered job titles.
+
+       File names:
+              Can be constrained by --file-category (audio, image, office, text,
+              video) or --file-type (a specific extension). If --file-type is
+              provided, it overrides --file-category. If neither is specified,
+              a random category is chosen.
+
+       Email addresses:
+              Can be constrained by --email-category (company, personal). Company
+              emails use company domain names, personal emails use common email
+              providers. If not specified, a random category is chosen.
+
+       Website domain names:
+              The --subdomains argument controls how many subdomains are included
+              in the generated domain name. Default is 1.
+
+       Music genres:
+              Uses the faker-music library. The --parent-music-genre argument
+              constrains generation to subgenres of the specified parent genre.
+              If not specified, a random parent genre is chosen and a random
+              subgenre from it is returned.
+
+       Musical instruments:
+              Uses the faker-music library. The --music-instrument-category
+              argument constrains generation to instruments in the specified
+              category. If not specified, a random category is chosen and a
+              random instrument from it is returned.
+
 EXIT STATUS
        0      Success
 
        1      Error occurred:
-              - Invalid type specified (not 'ssn', 'phone', 'address', 'typos', or 'color')
+              - Invalid type specified (not 'ssn', 'phone', 'address', 'typos', 'color', or 'name')
+              - Invalid name type specified (not a valid name type)
               - Invalid count (not a positive integer)
               - Invalid text format (contains non-keyboard characters for typos)
               - Invalid RGB value (not an integer between 0 and 255 for colors)
@@ -646,6 +862,7 @@ NOTES
        Required Usage:
               ALWAYS use the makefile targets (make gen-ssn, make gen-ssns,
               make gen-phone, make gen-phones, make gen-typos, make gen-typos-multi,
+              make gen-color, make gen-colors, make gen-name, make gen-names,
               or make start). Direct invocation of the Python script is NOT supported.
 
               Consequences of direct invocation:
@@ -686,6 +903,15 @@ NOTES
               or highly likely to be invalid/fictional. Override
               components at your own risk and heed the warnings.
 
+              Exception: Job titles, music genres, music instruments, and
+              vehicles are sourced from real-world databases within their
+              respective Faker providers, so they will correspond to real
+              entries. This is inherent to how these libraries work.
+
+              Additionally, color generation is guaranteed to produce
+              real colors, though they may not correspond directly to the
+              color name provided in the database since it finds the nearest match.
+
        Dependencies:
               The makefile uses 'uv' for Python environment management. Install
               it with 'make uv-install' if not already available. 'uv' itself
@@ -695,4 +921,4 @@ SEE ALSO
        make-man.txt - Documentation for makefile targets
        README.md - Project overview and setup instructions
 
-INFO-GEN                         January 2026                      INFO-GEN(1)
+INFO-GEN                         February 2026                     INFO-GEN(1)

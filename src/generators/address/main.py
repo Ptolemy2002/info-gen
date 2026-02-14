@@ -1,6 +1,6 @@
 from warnings import warn
 import random
-import faker
+from fake import get_fake
 import utils.location as location_utils
 from .pytypes import AddressArgs
 
@@ -26,8 +26,8 @@ def gen_address(data: AddressArgs={}, state_abbr: bool = True, existing_city: bo
         :param existing_city: Whether to use existing city names in a resolved state, or generate completely random city names.
         :return: A formatted address string.
     """
-    fake = faker.Faker('en_US')
-
+    fake = get_fake()
+    
     city = data.get('city')
     state = location_utils.normalize_state_name(data.get('state'), state_abbr)
     if state is None and data.get('state') is not None:
