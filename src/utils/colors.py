@@ -6,26 +6,7 @@ import random
 import os
 import requests
 import sys
-
-class RGB(TypedDict):
-    r: int
-    g: int
-    b: int
-
-class HSL(TypedDict):
-    h: float
-    s: float
-    l: float
-
-class CMYK(TypedDict):
-    c: float
-    m: float
-    y: float
-    k: float
-
-class DirtyColor(TypedDict):
-    name: str
-    rgb: RGB
+from utils.types import *
 
 colors: dict[str, RGB] | None = None
 colors_tuples: list[tuple[int, int, int]] | None = None

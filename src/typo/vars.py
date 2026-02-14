@@ -1,4 +1,4 @@
-from typing import TypedDict
+from typo.types import *
 
 low_letters = "abcdefghijklmnopqrstuvwxyz"
 cap_letters = low_letters.upper()
@@ -12,12 +12,6 @@ punctuation = "`~!@#$%^&*()-_=+[{]}\\|;:'\",<.>/?"
 all_characters = letters + digits + punctuation + ' '
 
 filler_words = ["um", "uh", "like", "you know", "I mean"]
-
-
-class KeyboardProximity(TypedDict):
-    accidental_shift: str
-    bordering: list[str]
-    accidental_shift_bordering: list[str]
 
 
 keyboard_proximity_map: dict[str, KeyboardProximity] = {
