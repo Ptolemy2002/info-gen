@@ -12,6 +12,7 @@ from generators import gen_ssn, gen_phone, gen_name, gen_address, gen_typos, gen
                        FILE_CATEGORIES, EMAIL_CATEGORIES, MUSIC_GENRES, INSTRUMENT_CATEGORIES
 from pytypes import *
 from file_parse import extract_interpolations, unique_interpolations, apply_interpolations
+import zlib
 
 # Put any files that are an output of the script here. "log.txt" will already exist.
 OUTPUTS_DIR = output_utils.get_latest_outputs_dir("main")
@@ -399,7 +400,13 @@ if __name__ == "__main__":
             inner_args = parse_args(inner_args_lst)
 
             inner_args.count = 1  # Override count to 1 for each interpolation
-            if inner_args.seed is None: inner_args.seed = args.seed  # Use main seed if no seed provided for interpolation
+            if inner_args.seed is None:
+                # Use main seed if no seed provided for interpolation
+                inner_args.seed = args.seed
+
+                # Vary the seed based on the identifier to ensure different results
+                # for each interpolation, but in a deterministic way
+                inner_args.seed += zlib.crc32(str(ident).encode()) % (2**32)
             
             print(f"------- Processing '{ident}' -------")
             results = main_exec(inner_args)

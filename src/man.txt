@@ -366,8 +366,10 @@ FILE INTERPOLATION
               If a token includes --seed, it seeds that generation call only
               and does not affect other ids.  If a token omits --seed, it
               inherits the --seed value from the outer command line, if one
-              was provided.  If neither specifies a seed, a random seed is
-              generated for that token as usual.
+              was provided, offset by a deterministic per-identifier value
+              derived via zlib.crc32 so that each unique id receives a
+              distinct but reproducible seed.  If neither specifies a seed,
+              a random seed is generated for that token as usual.
 
        Example template file (template.txt):
               Name: {{name1: name 1}}
@@ -1038,7 +1040,10 @@ NOTES
               - A --seed embedded inside a token's args seeds only that
                 token's generation call.
               - If a token does not specify --seed, it inherits the --seed
-                value from the outer command line (if one was provided).
+                value from the outer command line (if one was provided),
+                offset by a deterministic per-identifier value computed via
+                zlib.crc32.  This ensures each unique id gets a distinct
+                but fully reproducible seed across runs.
               - If neither the token nor the outer invocation specifies
                 --seed, a random seed is generated for that token as usual.
 

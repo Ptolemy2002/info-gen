@@ -61,6 +61,9 @@ gen-color: start
 gen-name: FULL_ARGS = name 1 $(ARGS)
 gen-name: start
 
+gen-number: FULL_ARGS = number 1 $(ARGS)
+gen-number: start
+
 gen-ssns: FULL_ARGS = ssn $(ARGS)
 gen-ssns: start
 
@@ -78,9 +81,6 @@ gen-colors: start
 
 gen-names: FULL_ARGS = name $(ARGS)
 gen-names: start
-
-gen-number: FULL_ARGS = number 1 $(ARGS)
-gen-number: start
 
 gen-numbers: FULL_ARGS = number $(ARGS)
 gen-numbers: start
