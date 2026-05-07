@@ -213,6 +213,13 @@ usage
            Additional arguments can be passed via ARGS variable
   Example: make usage
 
+man
+  Description: Displays the detailed manual for main.py
+  Usage: make man [ARGS="additional options"]
+  Details: Runs main.py with -m flag to show the full manual
+           Additional arguments can be passed via ARGS variable
+  Example: make man
+
 make-help
   Description: Displays this help documentation
   Usage: make make-help

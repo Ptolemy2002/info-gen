@@ -87,13 +87,18 @@ def parse_args(og_args: list[str]) -> Namespace:
     parser = argparse.ArgumentParser(
         description="Generate fake but realistic US Social Security Numbers, phone numbers, addresses, typos, and colors for testing purposes.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog=output_utils.get_manual()
     )
 
     parser.add_argument(
-        "-u", "--usage",
+        "--usage", "-u",
         action="store_true",
         help="Print usage instructions and examples, then exit."
+    )
+
+    parser.add_argument(
+        "--manual", "-m",
+        action="store_true",
+        help="Print detailed manual, then exit."
     )
 
     parser.add_argument(
@@ -239,7 +244,7 @@ def parse_args(og_args: list[str]) -> Namespace:
     )
 
     parser.add_argument(
-        "-f", "--file",
+        "--file", "-f",
         nargs='?',
         type=argparse.FileType('r'),
         help=
@@ -266,6 +271,10 @@ def parse_args(og_args: list[str]) -> Namespace:
 
     if args.usage:
         parser.print_usage()
+        exit(0)
+
+    if args.manual:
+        print(output_utils.get_manual())
         exit(0)
 
     return args

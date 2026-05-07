@@ -1025,4 +1025,4 @@ SEE ALSO
        make-man.txt - Documentation for makefile targets
        README.md - Project overview and setup instructions
 
-INFO-GEN                         February 2026                     INFO-GEN(1)
+INFO-GEN                         May 2026                     INFO-GEN(1)
