@@ -1,4 +1,4 @@
-.PHONY: dep-install uv-install rmzi rm-lock rm-outputs rm-pycache rm-venv reset lu-test typo-test colors-test start gen-ssn gen-phone gen-typos, gen-name gen-ssns gen-phones gen-typos-multi, gen-names clean-dirty-colors help make-help
+.PHONY: dep-install uv-install rmzi rm-lock rm-outputs rm-pycache rm-venv reset lu-test typo-test colors-test start gen-ssn gen-phone gen-typos, gen-name gen-ssns gen-phones gen-typos-multi, gen-names gen-from-file clean-dirty-colors help usage make-help
 
 DATE := $(shell date '+%Y/%m/%d')
 TIME := $(shell date '+%H-%M-%S')
@@ -79,11 +79,17 @@ gen-colors: start
 gen-names: FULL_ARGS = name $(ARGS)
 gen-names: start
 
+gen-from-file: FULL_ARGS = -f $(ARGS)
+gen-from-file: start
+
 clean-dirty-colors: FULL_ARGS = --clean-dirty-colors $(ARGS)
 clean-dirty-colors: start
 
 help: FULL_ARGS = --help $(ARGS)
 help: start
+
+usage: FULL_ARGS = -u $(ARGS)
+usage: start
 
 make-help:
 	cat ./make-man.txt

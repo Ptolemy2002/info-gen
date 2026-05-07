@@ -288,6 +288,82 @@ ARGUMENTS
               available categories from the faker-music library.
               If not specified, a random category is chosen.
 
+       --file, -f FILE
+              Path to a template text file containing interpolation tokens.
+              When provided, main.py reads the file, resolves every
+              interpolation token, and prints the final substituted text.
+              All other positional/generation arguments are ignored; each
+              token carries its own arguments inline.
+
+              Interpolation token syntax:
+                {{id: type [count] [options]}}   - defines id with CLI args
+                {{id}}                           - back-reference; reuses the
+                                                   args and value of the first
+                                                   occurrence of id
+
+              The id is any sequence of word characters (letters, digits,
+              underscore).  The arguments after the colon are identical to
+              what you would pass on the command line (e.g. "ssn 1 --seed 42").
+              All occurrences of the same id receive the same generated value.
+              If a token omits --seed, the outer --seed (if any) is inherited.
+
+              See FILE INTERPOLATION for full details and examples.
+
+FILE INTERPOLATION
+       When --file (-f) is provided, main.py operates in template mode
+       instead of direct generation mode.
+
+       Token format:
+              {{id: type [count] [options]}}
+              {{id}}
+
+       id     An identifier composed of word characters (\w+).  All tokens
+              sharing the same id will be replaced with the same generated
+              value.
+
+       First occurrence
+              Must include a colon followed by the full argument list exactly
+              as you would pass it on the command line:
+                {{ssn1: ssn 1 --seed 42}}
+                {{addr: address 1 --city Boston --state MA}}
+                {{clr: color 1 --min-r 200}}
+
+       Back-references
+              Subsequent uses of the same id may omit the argument list:
+                {{ssn1}}          <- same value as the first {{ssn1: ...}}
+
+              If a later token does include arguments, they must exactly
+              match the first occurrence or an error is raised.
+
+       Processing order
+              1. The file is scanned left-to-right; the first occurrence of
+                 each id defines its arguments.
+              2. main_exec() is called once per unique id.
+              3. Every token (including back-references) is replaced with
+                 that id's result.
+              4. The substituted text is printed to stdout.
+
+       Seed behaviour in template mode
+              Each id's argument list is parsed and executed independently.
+              If a token includes --seed, it seeds that generation call only
+              and does not affect other ids.  If a token omits --seed, it
+              inherits the --seed value from the outer command line, if one
+              was provided.  If neither specifies a seed, a random seed is
+              generated for that token as usual.
+
+       Example template file (template.txt):
+              Name: {{name1: name 1}}
+              SSN:  {{ssn1: ssn 1 --seed 99}}
+              Also known as {{name1}} with SSN {{ssn1}}.
+
+       Running:
+              make gen-from-file ARGS="template.txt"
+
+       Might produce:
+              Name: Alice Smith
+              SSN:  666-42-8801
+              Also known as Alice Smith with SSN 666-42-8801.
+
 PATTERN SYSTEM
        The tool supports a flexible pattern system for components:
 
@@ -536,6 +612,19 @@ EXAMPLES
        Using the generic start target for names:
               make start ARGS="name 5 --name-type person --gender female"
 
+       Process a template file:
+              make gen-from-file ARGS="template.txt"
+
+       Template file using multiple types and back-references:
+              # Contents of template.txt:
+              # Hello, {{name1: name 1}}! Your SSN is {{ssn1: ssn 1}}.
+              # Please confirm your name: {{name1}} and SSN: {{ssn1}}.
+              make gen-from-file ARGS="template.txt"
+
+       Template file with seeded values for reproducibility:
+              # {{addr1: address 1 --seed 7 --city Seattle --state WA}}
+              make gen-from-file ARGS="template.txt"
+
        Generate deterministic results with a seed:
               make gen-ssn ARGS="--seed 42"
               make gen-ssns ARGS="5 --seed 12345"
@@ -622,6 +711,10 @@ LOGGING
 FILES
        src/main.py
               Main script containing generation logic
+
+       src/file_parse.py
+              Template file parser: extract_interpolations(), unique_interpolations(),
+              apply_interpolations()
 
        src/typo/main.py
               Typo generator classes and logic
@@ -863,7 +956,8 @@ NOTES
               ALWAYS use the makefile targets (make gen-ssn, make gen-ssns,
               make gen-phone, make gen-phones, make gen-typos, make gen-typos-multi,
               make gen-color, make gen-colors, make gen-name, make gen-names,
-              or make start). Direct invocation of the Python script is NOT supported.
+              make gen-from-file, or make start). Direct invocation of the
+              Python script is NOT supported.
 
               Consequences of direct invocation:
                 - Script will crash if src/outputs/main/YYYY/MM/DD/ doesn't exist
@@ -893,6 +987,16 @@ NOTES
               Even when not providing a seed explicitly, the auto-generated seed
               is shown in the output, allowing you to reproduce the same results
               later by copying that seed value.
+
+              Seed Behavior in file/template mode (-f):
+              - Each interpolation token is executed independently; seeding
+                happens per-token.
+              - A --seed embedded inside a token's args seeds only that
+                token's generation call.
+              - If a token does not specify --seed, it inherits the --seed
+                value from the outer command line (if one was provided).
+              - If neither the token nor the outer invocation specifies
+                --seed, a random seed is generated for that token as usual.
 
        Validation:
               Values are automatically clamped to valid ranges. For example,

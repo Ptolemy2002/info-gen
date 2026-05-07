@@ -184,6 +184,18 @@ gen-names
     make gen-names ARGS="10"
     make gen-names ARGS="5 additional options"
 
+gen-from-file
+  Description: Processes a template file containing interpolation tokens
+  Usage: make gen-from-file ARGS="path/to/file.txt"
+  Details: Reads the specified file, finds all interpolation tokens of the form
+           {{id: type [count] [options]}} or back-references {{id}}, generates
+           a value for each unique ID, and prints the final text with all tokens
+           replaced. All occurrences of the same ID receive the same generated value.
+           The file path is passed to main.py via the -f flag.
+  Examples:
+    make gen-from-file ARGS="template.txt"
+    make gen-from-file ARGS="./src/assets/my-template.txt"
+
 clean-dirty-colors
   Description: Cleans the colors-dirty.json file and creates a clean colors.json. Both files will be in the assets directory.
 
@@ -193,6 +205,13 @@ help
   Details: Runs main.py with --help flag and logs output
            Additional arguments can be passed via ARGS variable
   Example: make help
+
+usage
+  Description: Displays usage information for main.py
+  Usage: make usage [ARGS="additional options"]
+  Details: Runs main.py with -u flag to show usage information
+           Additional arguments can be passed via ARGS variable
+  Example: make usage
 
 make-help
   Description: Displays this help documentation

@@ -1,6 +1,8 @@
 import argparse
+from argparse import Namespace
 import random
 import os
+import sys
 import faker
 from warnings import warn
 import utils.output as output_utils
@@ -9,6 +11,7 @@ from generators import gen_ssn, gen_phone, gen_name, gen_address, gen_typos, gen
                        AddressArgs, TypoArgs, ColorArgs, NameArgs, TYPO_GENERATORS, NAME_TYPES, \
                        FILE_CATEGORIES, EMAIL_CATEGORIES, MUSIC_GENRES, INSTRUMENT_CATEGORIES
 from pytypes import *
+from file_parse import extract_interpolations, unique_interpolations, apply_interpolations
 
 # Put any files that are an output of the script here. "log.txt" will already exist.
 OUTPUTS_DIR = output_utils.get_latest_outputs_dir("main")
@@ -30,7 +33,7 @@ def main(
         color_args: ColorArgs = {},
         name_args: NameArgs = {},
         name_type: str = "person"
-    ):
+    ) -> list[str]:
     if components is None:
         components = []
 
@@ -41,7 +44,7 @@ def main(
             return components[index]
         return default
 
-    results = []
+    results: list[str] = []
 
     if val_type == "ssn":
         start = component_or_default(0)
@@ -78,11 +81,19 @@ def main(
     for result in results:
         print(result)
 
-if __name__ == "__main__":
+    return results
+
+def parse_args(og_args: list[str]) -> Namespace:
     parser = argparse.ArgumentParser(
         description="Generate fake but realistic US Social Security Numbers, phone numbers, addresses, typos, and colors for testing purposes.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=output_utils.get_manual()
+    )
+
+    parser.add_argument(
+        "-u", "--usage",
+        action="store_true",
+        help="Print usage instructions and examples, then exit."
     )
 
     parser.add_argument(
@@ -227,14 +238,39 @@ if __name__ == "__main__":
         help="Instrument category for music_instrument generation"
     )
 
+    parser.add_argument(
+        "-f", "--file",
+        nargs='?',
+        type=argparse.FileType('r'),
+        help=
+            "Path to input file. If provided, will read the file and "
+            "generate output for each interpolation token found, then "
+            "substitute them in the text and print the final result. "
+            "Interpolation token format: {{id: args}} or {{id}} (back "
+            "reference to previously defined id with args)."
+    )
+
     # Argument processing
-    args = parser.parse_args()
+    args = parser.parse_args(og_args)
 
     if args.clean_dirty_colors:
         clean_dirty_colors()
         print("Exiting after cleaning dirty colors.")
         exit(0)
 
+    if args.type == 'color':
+        warn("Color generation will pick random values, but all will correspond to an actual color.")
+
+    if args.type == 'name' and args.name_type in ['job', 'music_genre', 'music_instrument', 'vehicle']:
+        warn(f"{args.name_type} generation will pick random values, but all will correspond to real entries in the Faker database for that category.")
+
+    if args.usage:
+        parser.print_usage()
+        exit(0)
+
+    return args
+
+def main_exec(args: Namespace) -> list[str]:
     if args.seed is not None:
         print(f"Using provided seed: {args.seed}")
         faker.Faker.seed(args.seed)
@@ -244,13 +280,7 @@ if __name__ == "__main__":
         print(f"No seed provided. Generated random seed {seed} from {args.seed_byte_size} bytes of entropy.")
         faker.Faker.seed(seed)
         random.seed(seed)
-
-    if args.type == 'color':
-        warn("Color generation will pick random values, but all will correspond to an actual color.")
-
-    if args.type == 'name' and args.name_type in ['job', 'music_genre', 'music_instrument', 'vehicle']:
-        warn(f"{args.name_type} generation will pick random values, but all will correspond to real entries in the Faker database for that category.")
-
+    
     address_args: AddressArgs = {
         'building_number': str(args.building_number) if args.building_number is not None else None,
         'street': str(args.street) if args.street is not None else None,
@@ -312,4 +342,41 @@ if __name__ == "__main__":
     if args.music_instrument_category is not None:
         name_args['music_instrument_category'] = args.music_instrument_category
 
-    main(args.type, args.count, components, address_args, not args.no_state_abbr, not args.no_existing_city, typo_args, color_args, name_args=name_args, name_type=args.name_type)
+    return main(
+        args.type, args.count, components, address_args,
+        not args.no_state_abbr, not args.no_existing_city,
+        typo_args, color_args, name_args=name_args, name_type=args.name_type
+    )
+
+if __name__ == "__main__":
+    args = parse_args(sys.argv[1:])
+
+
+    if args.file:
+        text = args.file.read()
+        interpolations = extract_interpolations(text)
+
+        print(f"Found {len(interpolations)} interpolation(s) in the file.")
+        print("------- Processing Interpolations -------")
+
+        values = {}
+        for ident, inner_args_lst in unique_interpolations(interpolations).items():
+            inner_args = parse_args(inner_args_lst)
+
+            inner_args.count = 1  # Override count to 1 for each interpolation
+            if inner_args.seed is None: inner_args.seed = args.seed  # Use main seed if no seed provided for interpolation
+            
+            print(f"------- Processing '{ident}' -------")
+            results = main_exec(inner_args)
+            print("------- End Generation -------")
+            
+            result = results[0] if results else ""
+            if result:
+                print(f"Generated value for id '{ident}': {result}")
+                values[ident] = result
+        
+        print("------- Final Output -------")
+        final_text = apply_interpolations(text, values)
+        print(final_text)
+    else:
+        main_exec(args)

@@ -21,3 +21,6 @@ outputs
 # Assets too large to store
 **/assets/colors-dirty.json
 **/assets/colors.json
+
+# A template file, not meant to be tracked
+**/assets/template.txt
