@@ -1,12 +1,12 @@
 INFO-GEN(1)                       User Commands                      INFO-GEN(1)
 
 NAME
-       info-gen - generate fake US Social Security Numbers, phone numbers, addresses, text with typos, colors, and names
+       info-gen - generate fake US Social Security Numbers, phone numbers, addresses, text with typos, colors, names, and numbers
 
 DESCRIPTION
        info-gen generates fake but realistic US Social Security Numbers (SSNs),
-       phone numbers, addresses, text with realistic typos, colors, and names
-       for testing purposes. The tool intelligently uses reserved/invalid number
+       phone numbers, addresses, text with realistic typos, colors, names, and
+       random numbers for testing purposes. The tool intelligently uses reserved/invalid number
        ranges by default to ensure generated values do not correspond to real
        people. For typo generation, it provides various typo types based on
        common typing errors. For color generation, it uses a database of color
@@ -64,6 +64,7 @@ ARGUMENTS
                 typos   - Generate text with realistic typos
                 color   - Generate random color(s) with names and formats
                 name    - Generate name(s) (people, companies, files, etc.)
+                number  - Generate random number(s) in a specified range
               Default: ssn
 
        COUNT
@@ -287,6 +288,23 @@ ARGUMENTS
               category. The value is matched case-insensitively against the
               available categories from the faker-music library.
               If not specified, a random category is chosen.
+
+       --min, -mn VALUE
+              For generating numbers, specify the minimum value (inclusive).
+              Accepts integer or float values.
+              Default: 0
+
+       --max, -mx VALUE
+              For generating numbers, specify the maximum value (inclusive).
+              Accepts integer or float values.
+              Default: 100
+
+       --precision, -p PRECISION
+              For generating numbers, specify the number of decimal places in
+              the output. Must be a non-negative integer. When 0, an integer is
+              generated using randint. When greater than 0, a float is generated
+              and rounded to the specified number of decimal places.
+              Default: 0
 
        --file, -f FILE
               Path to a template text file containing interpolation tokens.
@@ -612,6 +630,21 @@ EXAMPLES
        Using the generic start target for names:
               make start ARGS="name 5 --name-type person --gender female"
 
+       Generate a random integer (0-100 by default):
+              make gen-number
+
+       Generate 5 random integers between 1 and 50:
+              make gen-numbers ARGS="5 --min 1 --max 50"
+
+       Generate a random float with 2 decimal places:
+              make gen-number ARGS="--min 0.0 --max 1.0 --precision 2"
+
+       Generate 10 floats between -5 and 5 with 3 decimal places:
+              make gen-numbers ARGS="10 --min -5 --max 5 --precision 3"
+
+       Using the generic start target for numbers:
+              make start ARGS="number 5 --min 100 --max 999"
+
        Process a template file:
               make gen-from-file ARGS="template.txt"
 
@@ -669,6 +702,11 @@ OUTPUT FORMAT
        Color Format:
               COLOR_NAME - rgb(R, G, B), hex: #RRGGBB, hsl(H, S%, L%), cmyk(C%, M%, Y%, K%)
               Example: Crimson Red - rgb(220, 20, 60), hex: #dc143c, hsl(348.00, 83.33%, 47.06%), cmyk(0.00%, 90.91%, 72.73%, 13.73%)
+
+       Number Format:
+              A plain numeric string — integer or decimal depending on --precision.
+              Example (precision 0): 42
+              Example (precision 2): 3.14
 
        Name Format:
               The output format varies by name type:
@@ -785,6 +823,10 @@ FILES
        generators/name/vars.py
               Name type lists, file categories, email categories, music genres,
               and instrument categories
+
+       generators/number.py
+              Function for generating random numbers within a specified range
+              and precision
 
        src/fake.py
               Shared Faker instance holder with provider registration
@@ -944,20 +986,22 @@ EXIT STATUS
        0      Success
 
        1      Error occurred:
-              - Invalid type specified (not 'ssn', 'phone', 'address', 'typos', 'color', or 'name')
+              - Invalid type specified (not 'ssn', 'phone', 'address', 'typos', 'color', 'name', or 'number')
               - Invalid name type specified (not a valid name type)
               - Invalid count (not a positive integer)
               - Invalid text format (contains non-keyboard characters for typos)
               - Invalid RGB value (not an integer between 0 and 255 for colors)
               - No "assets/colors.json" file found when generating colors
+              - Minimum value greater than maximum value for number generation
+              - Invalid precision value (negative integer) for number generation
 
 NOTES
        Required Usage:
               ALWAYS use the makefile targets (make gen-ssn, make gen-ssns,
               make gen-phone, make gen-phones, make gen-typos, make gen-typos-multi,
               make gen-color, make gen-colors, make gen-name, make gen-names,
-              make gen-from-file, or make start). Direct invocation of the
-              Python script is NOT supported.
+              make gen-number, make gen-numbers, make gen-from-file, or make start).
+              Direct invocation of the Python script is NOT supported.
 
               Consequences of direct invocation:
                 - Script will crash if src/outputs/main/YYYY/MM/DD/ doesn't exist

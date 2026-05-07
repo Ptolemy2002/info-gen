@@ -5,3 +5,4 @@ from .ssn import *
 from .address import *
 from .typos import *
 from .name import *
+from .number import *

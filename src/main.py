@@ -7,7 +7,7 @@ import faker
 from warnings import warn
 import utils.output as output_utils
 from utils import clean_dirty_colors
-from generators import gen_ssn, gen_phone, gen_name, gen_address, gen_typos, gen_color, \
+from generators import gen_ssn, gen_phone, gen_name, gen_address, gen_typos, gen_color, gen_number, \
                        AddressArgs, TypoArgs, ColorArgs, NameArgs, TYPO_GENERATORS, NAME_TYPES, \
                        FILE_CATEGORIES, EMAIL_CATEGORIES, MUSIC_GENRES, INSTRUMENT_CATEGORIES
 from pytypes import *
@@ -32,7 +32,10 @@ def main(
         },
         color_args: ColorArgs = {},
         name_args: NameArgs = {},
-        name_type: str = "person"
+        name_type: str = "person",
+        min_val: float = 0,
+        max_val: float = 100,
+        precision: int = 0,
     ) -> list[str]:
     if components is None:
         components = []
@@ -77,6 +80,10 @@ def main(
         for _ in range(count):
             results.append(gen_name(name_type, name_args, log=True))
 
+    if val_type == "number":
+        for _ in range(count):
+            results.append(gen_number(min_val, max_val, precision, log=True))
+
     print("------- Output -------")
     for result in results:
         print(result)
@@ -109,7 +116,7 @@ def parse_args(og_args: list[str]) -> Namespace:
 
     parser.add_argument(
         'type',
-        choices=['ssn', 'phone', 'address', 'typos', 'color', 'name'],
+        choices=['ssn', 'phone', 'address', 'typos', 'color', 'name', 'number'],
         default='ssn',
         nargs='?',
         help="Type of information to generate (default: ssn)"
@@ -243,6 +250,24 @@ def parse_args(og_args: list[str]) -> Namespace:
         help="Instrument category for music_instrument generation"
     )
 
+    # Specific arguments for number generation
+    def precision_type(s: str) -> int:
+        try:
+            value = int(s)
+            if value < 0:
+                raise argparse.ArgumentTypeError("Precision must be a non-negative integer.")
+            return value
+        except ValueError:
+            raise argparse.ArgumentTypeError("Precision must be a non-negative integer.")
+        
+    parser.add_argument('--min', '-mn', type=float, default=0, help="Minimum value for number generation (default: 0)")
+    parser.add_argument('--max', '-mx', type=float, default=100, help="Maximum value for number generation (default: 100)")
+    parser.add_argument(
+        '--precision', '-p', type=precision_type, default=0,
+        help="Number of decimal places for number generation. Must be a non-negative integer (default: 0)"
+    )
+
+    # File input argument for interpolation processing
     parser.add_argument(
         "--file", "-f",
         nargs='?',
@@ -354,7 +379,8 @@ def main_exec(args: Namespace) -> list[str]:
     return main(
         args.type, args.count, components, address_args,
         not args.no_state_abbr, not args.no_existing_city,
-        typo_args, color_args, name_args=name_args, name_type=args.name_type
+        typo_args, color_args, name_args=name_args, name_type=args.name_type,
+        min_val=args.min, max_val=args.max, precision=args.precision
     )
 
 if __name__ == "__main__":

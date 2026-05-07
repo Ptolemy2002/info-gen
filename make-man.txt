@@ -121,6 +121,16 @@ gen-color
     make gen-color
     make gen-color ARGS="additional options"
 
+gen-number
+  Description: Generates a single random number
+  Usage: make gen-number [ARGS="arguments"]
+  Details: Convenience target that calls main.py to generate 1 number
+           Optional --min, --max, and --precision arguments can be specified
+  Examples:
+    make gen-number
+    make gen-number ARGS="--min 1 --max 100"
+    make gen-number ARGS="--min 0.0 --max 1.0 --precision 2"
+
 gen-name
   Description: Generates a single name value
   Usage: make gen-name [ARGS="arguments"]
@@ -174,6 +184,15 @@ gen-colors
   Examples:
     make gen-colors ARGS="10"
     make gen-colors ARGS="5 additional options"
+
+gen-numbers
+  Description: Generates multiple random numbers
+  Usage: make gen-numbers ARGS="count [arguments]"
+  Details: Convenience target that calls main.py to generate multiple numbers
+           First argument is the count, followed by optional --min, --max, --precision arguments
+  Examples:
+    make gen-numbers ARGS="10"
+    make gen-numbers ARGS="5 --min 1 --max 50 --precision 1"
 
 gen-names
   Description: Generates multiple name values
