@@ -404,9 +404,10 @@ if __name__ == "__main__":
                 # Use main seed if no seed provided for interpolation
                 inner_args.seed = args.seed
 
-                # Vary the seed based on the identifier to ensure different results
-                # for each interpolation, but in a deterministic way
-                inner_args.seed += zlib.crc32(str(ident).encode()) % (2**32)
+                if inner_args.seed is not None:
+                    # Vary the seed based on the identifier to ensure different results
+                    # for each interpolation, but in a deterministic way
+                    inner_args.seed += zlib.crc32(str(ident).encode()) % (2**32)
             
             print(f"------- Processing '{ident}' -------")
             results = main_exec(inner_args)
