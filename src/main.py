@@ -91,9 +91,23 @@ def main(
 
     return results
 
+def gen_seed(seed_byte_size: int = 16) -> int:
+    seed = int.from_bytes(os.urandom(seed_byte_size), 'big')
+    print(f"Generated random seed {seed} from {seed_byte_size} bytes of entropy.")
+    return seed
+
+def derive_seed(base: int, identifier: str) -> int:
+    # Derive a new seed based on the base seed and the identifier using a hash function
+    derived_seed = (base + zlib.crc32(identifier.encode())) % (2**32)
+    return derived_seed
+
+def apply_seed(seed: int):
+    faker.Faker.seed(seed)
+    random.seed(seed)
+
 def parse_args(og_args: list[str]) -> Namespace:
     parser = argparse.ArgumentParser(
-        description="Generate fake but realistic US Social Security Numbers, phone numbers, addresses, typos, and colors for testing purposes.",
+        description="Generate fake but realistic numbers, US Social Security Numbers, phone numbers, addresses, typos, names, and colors for testing purposes.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
 
@@ -307,14 +321,12 @@ def parse_args(og_args: list[str]) -> Namespace:
 
 def main_exec(args: Namespace) -> list[str]:
     if args.seed is not None:
-        print(f"Using provided seed: {args.seed}")
-        faker.Faker.seed(args.seed)
-        random.seed(args.seed)
+        print(f"Using seed: {args.seed}")
+        apply_seed(args.seed)
     else:
-        seed = int.from_bytes(os.urandom(args.seed_byte_size), 'big')
-        print(f"No seed provided. Generated random seed {seed} from {args.seed_byte_size} bytes of entropy.")
-        faker.Faker.seed(seed)
-        random.seed(seed)
+        print(f"No seed provided.")
+        seed = gen_seed(args.seed_byte_size)
+        apply_seed(seed)
     
     address_args: AddressArgs = {
         'building_number': str(args.building_number) if args.building_number is not None else None,
@@ -387,6 +399,10 @@ def main_exec(args: Namespace) -> list[str]:
 if __name__ == "__main__":
     args = parse_args(sys.argv[1:])
 
+    if args.seed is None:
+        print(f"No seed provided.")
+        args.seed = gen_seed(args.seed_byte_size)
+        apply_seed(args.seed)
 
     if args.file:
         text = args.file.read()
@@ -407,13 +423,17 @@ if __name__ == "__main__":
                 if inner_args.seed is not None:
                     # Vary the seed based on the identifier to ensure different results
                     # for each interpolation, but in a deterministic way
-                    inner_args.seed += zlib.crc32(str(ident).encode()) % (2**32)
+                    inner_args.seed += derive_seed(args.seed, ident)
             
             print(f"------- Processing '{ident}' -------")
             results = main_exec(inner_args)
             print("------- End Generation -------")
             
             result = results[0] if results else ""
+            if inner_args.type == "color" and result:
+                # Get just the part that comes before the first dash, and strip whitespace
+                result = result.split('-')[0].strip()
+
             if result:
                 print(f"Generated value for id '{ident}': {result}")
                 values[ident] = result

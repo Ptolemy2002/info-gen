@@ -365,11 +365,14 @@ FILE INTERPOLATION
               Each id's argument list is parsed and executed independently.
               If a token includes --seed, it seeds that generation call only
               and does not affect other ids.  If a token omits --seed, it
-              inherits the --seed value from the outer command line, if one
-              was provided, offset by a deterministic per-identifier value
+              inherits the --seed value from the outer command line (if one
+              was provided), offset by a deterministic per-identifier value
               derived via zlib.crc32 so that each unique id receives a
-              distinct but reproducible seed.  If neither specifies a seed,
-              a random seed is generated for that token as usual.
+              distinct but reproducible seed across runs.  If no outer --seed
+              is provided, a single random seed is auto-generated for the
+              outer invocation and all tokens without their own --seed inherit
+              that shared seed (each offset by its own zlib.crc32-derived
+              value).
 
        Example template file (template.txt):
               Name: {{name1: name 1}}
@@ -724,7 +727,7 @@ OUTPUT FORMAT
                 vehicle          - Year make model (e.g., "2020 Toyota Camry")
 
        Output includes:
-              - Seed information (either "Using provided seed: X" or "No seed provided. Generated random seed X from Y bytes of entropy.")
+              - Seed information (either "Using seed: X" when a seed is set, or "No seed provided." followed by "Generated random seed X from Y bytes of entropy." when auto-generating)
               - Transformation messages (when patterns are used for SSN/phone)
               - Clamping messages (when values are out of range for SSN/phone)
               - Location lookup messages (for addresses with --city/--state/--zip)
@@ -1044,8 +1047,10 @@ NOTES
                 offset by a deterministic per-identifier value computed via
                 zlib.crc32.  This ensures each unique id gets a distinct
                 but fully reproducible seed across runs.
-              - If neither the token nor the outer invocation specifies
-                --seed, a random seed is generated for that token as usual.
+              - If no outer --seed is provided, a single random seed is
+                auto-generated for the outer invocation; all tokens without
+                their own --seed then inherit that shared seed (each offset
+                by its own zlib.crc32-derived value per identifier).
 
        Validation:
               Values are automatically clamped to valid ranges. For example,
