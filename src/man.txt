@@ -1,20 +1,22 @@
 INFO-GEN(1)                       User Commands                      INFO-GEN(1)
 
 NAME
-       info-gen - generate fake US Social Security Numbers, phone numbers, addresses, text with typos, colors, names, and numbers
+       info-gen - generate fake US Social Security Numbers, phone numbers, addresses, text with typos, colors, names, numbers, and identifiers (emails, usernames)
 
 DESCRIPTION
        info-gen generates fake but realistic US Social Security Numbers (SSNs),
-       phone numbers, addresses, text with realistic typos, colors, names, and
-       random numbers for testing purposes. The tool intelligently uses reserved/invalid number
-       ranges by default to ensure generated values do not correspond to real
-       people. For typo generation, it provides various typo types based on
-       common typing errors. For color generation, it uses a database of color
-       names (recommended to take from https://colornamer.robertcooper.me/ with
-       over 30,000 color entries) to provide human-readable names for generated
-       colors. For name generation, it uses the Faker library (with additional
-       providers for music and vehicles) to generate realistic names across
-       many categories including people, companies, files, emails, and more.
+       phone numbers, addresses, text with realistic typos, colors, names,
+       random numbers, and identifiers (emails, usernames) for testing purposes.
+       The tool intelligently uses reserved/invalid number ranges by default to
+       ensure generated values do not correspond to real people. For typo
+       generation, it provides various typo types based on common typing errors.
+       For color generation, it uses a database of color names (recommended to
+       take from https://colornamer.robertcooper.me/ with over 30,000 color
+       entries) to provide human-readable names for generated colors. For name
+       generation, it uses the Faker library (with additional providers for
+       music and vehicles) to generate realistic names across many categories
+       including people, companies, files, and more. For identifier generation,
+       it creates emails and usernames derived from realistic name components.
 
        IMPORTANT: This script MUST be run via the makefile targets. Direct
        invocation of main.py is NOT supported and will cause failures.
@@ -57,14 +59,15 @@ ARGUMENTS
               the main generation functionality.
 
        TYPE
-              Type of identifier to generate. Must be one of:
-                ssn     - Generate Social Security Number(s)
-                phone   - Generate phone number(s)
-                address - Generate US address(es)
-                typos   - Generate text with realistic typos
-                color   - Generate random color(s) with names and formats
-                name    - Generate name(s) (people, companies, files, etc.)
-                number  - Generate random number(s) in a specified range
+              Type of information to generate. Must be one of:
+                ssn        - Generate Social Security Number(s)
+                phone      - Generate phone number(s)
+                address    - Generate US address(es)
+                typos      - Generate text with realistic typos
+                color      - Generate random color(s) with names and formats
+                name       - Generate name(s) (people, companies, files, etc.)
+                number     - Generate random number(s) in a specified range
+                identifier - Generate identifier(s) (emails, usernames)
               Default: ssn
 
        COUNT
@@ -231,9 +234,7 @@ ARGUMENTS
               Must be one of:
                 company          - Generate a company name
                 file_name        - Generate a file name with extension
-                email            - Generate an email address
                 website          - Generate a website domain name
-                user_name        - Generate a username
                 job              - Generate a job title
                 person           - Generate a person's full name
                 music_genre      - Generate a music genre/subgenre
@@ -242,18 +243,28 @@ ARGUMENTS
               Default: person
 
        --first-name, -fn FIRST_NAME
-              For generating person names, specify the first name to use.
-              If not specified, a random first name is generated based on gender.
+              For generating person names and identifiers, specify the first
+              name to use. If not specified, a random first name is generated
+              based on gender.
 
        --last-name, -ln LAST_NAME
-              For generating person names, specify the last name to use.
-              If not specified, a random last name is generated based on gender.
+              For generating person names and identifiers, specify the last
+              name to use. If not specified, a random last name is generated
+              based on gender.
+
+       --full-name, -fln FULL_NAME
+              For generating person names, specify the full name (at least two
+              space-separated words). The first word is used as the first name
+              and the last word as the last name. If provided, overrides
+              --first-name and --last-name.
 
        --gender, -ge GENDER
-              For generating person or job names, specify the gender.
+              For generating person names, job names, and identifiers, specify
+              the gender.
               Must be one of: male, female, nb
               For person names, "nb" generates a non-binary name.
-              For job names, "nb" selects a random gender internally.
+              For job names and identifiers, "nb" selects a random gender
+              internally.
               If not specified, a random gender is chosen.
 
        --file-category, -fc CATEGORY
@@ -265,11 +276,6 @@ ARGUMENTS
        --file-type, -ft EXTENSION
               For generating file names, specify the file extension directly.
               Overrides --file-category if both are provided.
-
-       --email-category, -ec CATEGORY
-              For generating email addresses, specify the email category.
-              Must be one of: company, personal
-              If not specified, a random category is chosen.
 
        --subdomains, -sd COUNT
               For generating website domain names, specify the number of
@@ -290,13 +296,15 @@ ARGUMENTS
               If not specified, a random category is chosen.
 
        --min, -mn VALUE
-              For generating numbers, specify the minimum value (inclusive).
-              Accepts integer or float values.
+              For generating numbers and usernames, specify the minimum value
+              (inclusive). For numbers, accepts integer or float values. For
+              usernames, this is the minimum numeric suffix value (integer).
               Default: 0
 
        --max, -mx VALUE
-              For generating numbers, specify the maximum value (inclusive).
-              Accepts integer or float values.
+              For generating numbers and usernames, specify the maximum value
+              (inclusive). For numbers, accepts integer or float values. For
+              usernames, this is the maximum numeric suffix value (integer).
               Default: 100
 
        --precision, -p PRECISION
@@ -327,6 +335,32 @@ ARGUMENTS
 
               See FILE INTERPOLATION for full details and examples.
 
+       --identifier-type, -idt IDENTIFIER_TYPE
+              For generating identifiers, specify the type to generate.
+              Must be one of:
+                email    - Generate an email address
+                username - Generate a username
+              Default: email
+
+       --user-name, -un USER_NAME
+              For generating email addresses, specify the username portion
+              (the part before @). If not specified, a username is generated
+              automatically using --first-name / --last-name (or random names
+              if those are not provided).
+
+       --domain, -dm DOMAIN
+              For generating email addresses, specify the domain (the part
+              after @). If not specified, a random domain is generated based
+              on --domain-type.
+
+       --domain-type, -dt DOMAIN_TYPE
+              For generating email addresses when --domain is not specified,
+              control the style of the generated domain.
+              Must be one of: personal, business
+              personal  - Use a well-known free email provider domain
+              business  - Use a randomly generated company domain name
+              If not specified, a random domain type is chosen.
+
 FILE INTERPOLATION
        When --file (-f) is provided, main.py operates in template mode
        instead of direct generation mode.
@@ -346,45 +380,66 @@ FILE INTERPOLATION
                 {{addr: address 1 --city Boston --state MA}}
                 {{clr: color 1 --min-r 200}}
 
+       Result references
+              A token's argument list may reference the already-generated
+              result of another token using $(other_id):
+                {{name1: name 1}}
+                {{email1: identifier 1 --user-name $(name1)}}
+
+              $(other_id) is substituted with the resolved value of
+              other_id before the argument list is parsed.  Dependencies are
+              executed in topological order — you do not need to arrange
+              tokens manually.  Circular references and references to
+              undefined ids raise errors.
+
        Back-references
               Subsequent uses of the same id may omit the argument list:
                 {{ssn1}}          <- same value as the first {{ssn1: ...}}
 
               If a later token does include arguments, they must exactly
-              match the first occurrence or an error is raised.
+              match the raw args string of the first occurrence or an error
+              is raised.
 
        Processing order
               1. The file is scanned left-to-right; the first occurrence of
-                 each id defines its arguments.
-              2. main_exec() is called once per unique id.
-              3. Every token (including back-references) is replaced with
+                 each id defines its argument template.
+              2. Ids are sorted topologically so every dependency is
+                 resolved before the tokens that reference it.
+              3. main_exec() is called once per unique id.
+              4. Every token (including back-references) is replaced with
                  that id's result.
-              4. The substituted text is printed to stdout.
+              5. The substituted text is printed to stdout.
+
+       Multiple outputs (COUNT)
+              When COUNT is provided on the command line, the entire template
+              is processed COUNT times and each output is printed separately
+              under a numbered header.  Each run derives independent seeds so
+              the outputs differ even when no explicit --seed is given.
+                make gen-from-file ARGS="3 template.txt"
 
        Seed behaviour in template mode
               Each id's argument list is parsed and executed independently.
-              If a token includes --seed, it seeds that generation call only
-              and does not affect other ids.  If a token omits --seed, it
-              inherits the --seed value from the outer command line (if one
-              was provided), offset by a deterministic per-identifier value
-              derived via zlib.crc32 so that each unique id receives a
-              distinct but reproducible seed across runs.  If no outer --seed
-              is provided, a single random seed is auto-generated for the
-              outer invocation and all tokens without their own --seed inherit
-              that shared seed (each offset by its own zlib.crc32-derived
-              value).
+              Every token — with or without an explicit --seed — receives a
+              seed derived from the outer --seed (or the auto-generated seed)
+              combined with the token identifier and the run index via
+              zlib.crc32.  This guarantees that each unique id and each
+              repetition (when COUNT > 1) receives a distinct but fully
+              reproducible seed.  To embed a fixed seed inside a token, use
+              a result reference rather than --seed directly.
 
        Example template file (template.txt):
-              Name: {{name1: name 1}}
-              SSN:  {{ssn1: ssn 1 --seed 99}}
+              Name:  {{name1: name 1}}
+              SSN:   {{ssn1: ssn 1}}
+              Email: {{email1: identifier 1 --user-name $(name1)}}
               Also known as {{name1}} with SSN {{ssn1}}.
 
        Running:
               make gen-from-file ARGS="template.txt"
 
        Might produce:
-              Name: Alice Smith
-              SSN:  666-42-8801
+              Name:  Alice Smith
+              SSN:   666-42-8801
+              Email: alicesmith42@gmail.com
               Also known as Alice Smith with SSN 666-42-8801.
 
 PATTERN SYSTEM
@@ -452,6 +507,12 @@ WARNINGS
               so the name may not perfectly describe the generated color. No
               warnings are issued for colors since they do not correspond to
               real entities in the same way as SSNs or phone numbers.
+
+       For Identifiers:
+              Generated usernames and email addresses are constructed from
+              synthetic name components and do not correspond to real accounts.
+              However, if --domain is provided manually, the resulting email
+              address might match a real person's address; use with caution.
 
 EXAMPLES
        Clean the dirty colors file (utility operation):
@@ -599,6 +660,9 @@ EXAMPLES
        Generate a person name with both first and last name specified:
               make gen-name ARGS="--first-name Alice --last-name Smith"
 
+       Generate a person name with a full name:
+              make gen-name ARGS="--full-name 'Alice Smith'"
+
        Generate a company name:
               make gen-name ARGS="--name-type company"
               make gen-name ARGS="-nt company"
@@ -609,10 +673,6 @@ EXAMPLES
 
        Generate a file name with a specific extension:
               make gen-name ARGS="-nt file_name --file-type .csv"
-
-       Generate an email address:
-              make gen-name ARGS="-nt email --email-category personal"
-              make gen-name ARGS="-nt email -ec company"
 
        Generate a website domain name with subdomains:
               make gen-name ARGS="-nt website --subdomains 3"
@@ -650,6 +710,37 @@ EXAMPLES
        Using the generic start target for numbers:
               make start ARGS="number 5 --min 100 --max 999"
 
+       Generate a random email address:
+              make start ARGS="identifier 1"
+
+       Generate 5 email addresses:
+              make start ARGS="identifier 5"
+
+       Generate an email with a specific domain type:
+              make start ARGS="identifier 1 --domain-type personal"
+              make start ARGS="identifier 1 --domain-type business"
+
+       Generate an email with a specific domain:
+              make start ARGS="identifier 1 --domain example.com"
+
+       Generate an email with a specific username:
+              make start ARGS="identifier 1 --user-name alice"
+
+       Generate an email derived from a specific person's name:
+              make start ARGS="identifier 1 --first-name Alice --last-name Smith"
+
+       Generate an email derived from a gendered name:
+              make start ARGS="identifier 1 --gender female"
+
+       Generate a random username:
+              make start ARGS="identifier 1 --identifier-type username"
+
+       Generate a username with numeric suffix range 1000-9999:
+              make start ARGS="identifier 1 --identifier-type username --min 1000 --max 9999"
+
+       Generate a username with a specific first/last name:
+              make start ARGS="identifier 1 --identifier-type username --first-name Alice --last-name Smith"
+
        Process a template file:
               make gen-from-file ARGS="template.txt"
 
@@ -659,8 +750,17 @@ EXAMPLES
               # Please confirm your name: {{name1}} and SSN: {{ssn1}}.
               make gen-from-file ARGS="template.txt"
 
+       Template file using result references (email derived from generated name):
+              # Contents of template.txt:
+              # {{name1: name 1}}
+              # {{email1: identifier 1 --user-name $(name1)}}
+              make gen-from-file ARGS="template.txt"
+
+       Template file generating 3 independent outputs:
+              make gen-from-file ARGS="3 template.txt"
+
        Template file with seeded values for reproducibility:
-              # {{addr1: address 1 --seed 7 --city Seattle --state WA}}
+              # {{addr1: address 1 --city Seattle --state WA}}
               make gen-from-file ARGS="template.txt"
 
        Generate deterministic results with a seed:
@@ -718,13 +818,16 @@ OUTPUT FORMAT
                 person           - FIRST_NAME LAST_NAME (e.g., "Alice Smith")
                 company          - Company name string (e.g., "Smith LLC")
                 file_name        - Filename with extension (e.g., "report.pdf")
-                email            - Email address (e.g., "alice@example.com")
                 website          - Domain name (e.g., "example.com")
-                user_name        - Username string (e.g., "alice_smith")
                 job              - Job title string (e.g., "Software Engineer")
                 music_genre      - Genre/subgenre string (e.g., "Progressive Rock")
                 music_instrument - Instrument name (e.g., "Violin")
                 vehicle          - Year make model (e.g., "2020 Toyota Camry")
+
+       Identifier Format:
+              The output format varies by identifier type:
+                email    - user@domain (e.g., "alicesmith42@gmail.com")
+                username - Formatted username string (e.g., "alice_smith", "AliceS7")
 
        Output includes:
               - Seed information (either "Using seed: X" when a seed is set, or "No seed provided." followed by "Generated random seed X from Y bytes of entropy." when auto-generating)
@@ -765,9 +868,6 @@ FILES
        src/typo/vars.py
               Character sets and variables used for typo generation
 
-       src/typo/vars.py
-              Character sets and variables used for typo generation
-
        src/utils/output.py
               Utility functions for output directory management
 
@@ -776,6 +876,10 @@ FILES
 
        src/utils/math.py
               Utility functions for math operations (e.g., clamping, random selection)
+
+       src/utils/text.py
+              Utility functions for string casing conversion (to_casing, get_casing)
+              and the CASING_TYPES constant
 
        src/utils/component.py
               Functions for parsing and applying component patterns
@@ -826,8 +930,17 @@ FILES
               Name argument data types and classes
 
        generators/name/vars.py
-              Name type lists, file categories, email categories, music genres,
-              and instrument categories
+              Name type lists, file categories, music genres, and instrument
+              categories
+
+       generators/identifier/main.py
+              Functions for generating email addresses and usernames
+
+       generators/identifier/pytypes.py
+              Identifier argument data types and classes
+
+       generators/identifier/vars.py
+              Identifier type list and username scheme templates
 
        generators/number.py
               Function for generating random numbers within a specified range
@@ -945,15 +1058,14 @@ NAME GENERATION SYSTEM
 
        Simple types (no additional arguments):
               - company: Generates a company name
-              - user_name: Generates a username
               - vehicle: Generates a vehicle year/make/model string
 
        Person names:
               Generated as "FIRST_NAME LAST_NAME". Both the first and last name
-              can be specified via --first-name and --last-name. If not provided,
-              they are randomly generated based on --gender. Gender can be "male",
-              "female", or "nb" (non-binary). If no gender is specified, one is
-              randomly chosen from all three options.
+              can be specified via --first-name, --last-name, or --full-name.
+              If not provided, they are randomly generated based on --gender.
+              Gender can be "male", "female", or "nb" (non-binary). If no gender
+              is specified, one is randomly chosen from all three options.
 
        Job titles:
               Respects the --gender argument. If gender is "nb" or not specified,
@@ -965,11 +1077,6 @@ NAME GENERATION SYSTEM
               video) or --file-type (a specific extension). If --file-type is
               provided, it overrides --file-category. If neither is specified,
               a random category is chosen.
-
-       Email addresses:
-              Can be constrained by --email-category (company, personal). Company
-              emails use company domain names, personal emails use common email
-              providers. If not specified, a random category is chosen.
 
        Website domain names:
               The --subdomains argument controls how many subdomains are included
@@ -987,11 +1094,38 @@ NAME GENERATION SYSTEM
               category. If not specified, a random category is chosen and a
               random instrument from it is returned.
 
+IDENTIFIER GENERATION SYSTEM
+       The identifier generation system creates realistic email addresses and
+       usernames derived from name components.
+
+       Email addresses:
+              An email is composed of a username portion and a domain portion.
+              If --user-name is provided, it is used directly; otherwise a
+              username is generated (see Usernames below).  If --domain is
+              provided it is used as-is; otherwise a domain is generated
+              based on --domain-type:
+                personal - A well-known free email provider (e.g., gmail.com)
+                business - A randomly generated company domain name
+
+              --first-name, --last-name, and --gender are forwarded to
+              username generation when --user-name is not provided.
+
+       Usernames:
+              A username is built from a randomly selected scheme that
+              combines parts of the first and last name with optional
+              numeric suffixes.  Example schemes produce usernames such as:
+                alice_smith, AliceS, aSmith42, ALICES, alicesmith7
+
+              If --first-name or --last-name is not provided, a random name
+              is generated based on --gender.  The optional numeric suffix
+              is drawn from the range [--min, --max] (defaults 0–100) and
+              may or may not appear depending on the selected scheme.
+
 EXIT STATUS
        0      Success
 
        1      Error occurred:
-              - Invalid type specified (not 'ssn', 'phone', 'address', 'typos', 'color', 'name', or 'number')
+              - Invalid type specified (not 'ssn', 'phone', 'address', 'typos', 'color', 'name', 'number', or 'identifier')
               - Invalid name type specified (not a valid name type)
               - Invalid count (not a positive integer)
               - Invalid text format (contains non-keyboard characters for typos)
@@ -1005,7 +1139,8 @@ NOTES
               ALWAYS use the makefile targets (make gen-ssn, make gen-ssns,
               make gen-phone, make gen-phones, make gen-typos, make gen-typos-multi,
               make gen-color, make gen-colors, make gen-name, make gen-names,
-              make gen-number, make gen-numbers, make gen-from-file, or make start).
+              make gen-number, make gen-numbers, make gen-from-file, make start).
+              For identifier generation use make start ARGS="identifier ...".
               Direct invocation of the Python script is NOT supported.
 
               Consequences of direct invocation:

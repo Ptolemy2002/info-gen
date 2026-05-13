@@ -5,7 +5,7 @@ from faker_music.instruments import instrument_list
 from .vars import *
 from .pytypes import *
 
-def gen_name(type, args: NameArgs, log: bool = False) -> str:
+def gen_name(type: str, args: NameArgs, log: bool = False) -> str:
     fake = get_fake()
 
     match type:
@@ -33,29 +33,10 @@ def gen_name(type, args: NameArgs, log: bool = False) -> str:
                 if log: print(f"Selected file category '{category}'.")
 
             return fake.file_name(category=category)
-        case "email":
-            category = args.get("email_category")
-            if category is not None:
-                if category not in EMAIL_CATEGORIES:
-                    if log: print(f"Provided email category '{category}' is not valid. Generating a random email without a category.")
-                    category = None
-                else:
-                    if log: print(f"Generating an email with category '{category}'.")
-            else:
-                if log: print("No email category provided. Generating a random email category.")
-                category = random.choice(EMAIL_CATEGORIES)
-                if log: print(f"Selected email category '{category}'.")
-
-            if category == "personal":
-                return fake.ascii_email()
-            else:
-                return fake.company_email()
         case "website":
             subdomains = args.get("subdomains", 0)
             if log: print(f"Generating a website with {subdomains} subdomains.")
             return fake.domain_name(subdomains)
-        case "user_name":
-            return fake.user_name()
         case "job":
             gender = args.get("gender", "nb")
 

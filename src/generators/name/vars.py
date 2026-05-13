@@ -4,9 +4,7 @@ from faker_music.instruments import instrument_list
 NAME_TYPES = [
     "company",
     "file_name",
-    "email",
     "website",
-    "user_name",
     "job",
     "person",
     "music_genre",
@@ -20,11 +18,6 @@ FILE_CATEGORIES = [
     "office",
     "text",
     "video"
-]
-
-EMAIL_CATEGORIES = [
-    "company",
-    "personal"
 ]
 
 MUSIC_GENRES = [g["genre"] for g in genre_list]

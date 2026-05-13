@@ -1,4 +1,4 @@
-.PHONY: dep-install uv-install rmzi rm-lock rm-outputs rm-pycache rm-venv reset lu-test typo-test colors-test start gen-ssn gen-phone gen-typos gen-name gen-ssns gen-phones gen-typos-multi gen-names gen-number gen-numbers gen-from-file clean-dirty-colors help usage man make-help
+.PHONY: dep-install uv-install rmzi rm-lock rm-outputs rm-pycache rm-venv reset lu-test typo-test colors-test start gen-ssn gen-phone gen-typos gen-name gen-ssns gen-phones gen-typos-multi gen-names gen-number gen-numbers gen-from-file clean-dirty-colors help usage man make-help gen-identifier gen-identifiers
 
 DATE := $(shell date '+%Y/%m/%d')
 TIME := $(shell date '+%H-%M-%S')
@@ -64,6 +64,13 @@ gen-name: start
 gen-number: FULL_ARGS = number 1 $(ARGS)
 gen-number: start
 
+gen-identifier: FULL_ARGS = identifier 1 $(ARGS)
+gen-identifier: start
+
+# The first argument is arbitrary here.
+gen-from-file: FULL_ARGS = name -f $(ARGS)
+gen-from-file: start
+
 gen-ssns: FULL_ARGS = ssn $(ARGS)
 gen-ssns: start
 
@@ -85,8 +92,8 @@ gen-names: start
 gen-numbers: FULL_ARGS = number $(ARGS)
 gen-numbers: start
 
-gen-from-file: FULL_ARGS = -f $(ARGS)
-gen-from-file: start
+gen-identifiers: FULL_ARGS = identifier $(ARGS)
+gen-identifiers: start
 
 clean-dirty-colors: FULL_ARGS = --clean-dirty-colors $(ARGS)
 clean-dirty-colors: start

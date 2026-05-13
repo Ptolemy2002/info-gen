@@ -6,3 +6,4 @@ from .address import *
 from .typos import *
 from .name import *
 from .number import *
+from .identifier import *

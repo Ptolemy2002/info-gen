@@ -140,6 +140,15 @@ gen-name
     make gen-name
     make gen-name ARGS="additional options"
 
+gen-identifier
+  Description: Generates a single identifier value (email or username)
+  Usage: make gen-identifier [ARGS="arguments"]
+  Details: Convenience target that calls main.py to generate 1 identifier value
+           Additional arguments can be specified for identifier generation
+  Examples:
+    make gen-identifier
+    make gen-identifier ARGS="additional options"
+
 gen-ssns
   Description: Generates multiple SSNs
   Usage: make gen-ssns ARGS="count [component values]"
@@ -202,6 +211,15 @@ gen-names
   Examples:
     make gen-names ARGS="10"
     make gen-names ARGS="5 additional options"
+
+gen-identifiers
+  Description: Generates multiple identifier values (emails or usernames)
+  Usage: make gen-identifiers ARGS="count [arguments]"
+  Details: Convenience target that calls main.py to generate multiple identifier values
+           First argument is the count, followed by optional arguments for identifier generation
+  Examples:
+    make gen-identifiers ARGS="10"
+    make gen-identifiers ARGS="5 additional options"
 
 gen-from-file
   Description: Processes a template file containing interpolation tokens

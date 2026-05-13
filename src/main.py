@@ -6,12 +6,14 @@ import sys
 import faker
 from warnings import warn
 import utils.output as output_utils
+from typing import cast
 from utils import clean_dirty_colors
-from generators import gen_ssn, gen_phone, gen_name, gen_address, gen_typos, gen_color, gen_number, \
-                       AddressArgs, TypoArgs, ColorArgs, NameArgs, TYPO_GENERATORS, NAME_TYPES, \
-                       FILE_CATEGORIES, EMAIL_CATEGORIES, MUSIC_GENRES, INSTRUMENT_CATEGORIES
+from generators import gen_ssn, gen_phone, gen_name, gen_address, gen_typos, gen_color, gen_number, gen_identifier, \
+                       AddressArgs, TypoArgs, ColorArgs, NameArgs, IdentifierArgs, TYPO_GENERATORS, NAME_TYPES, \
+                       FILE_CATEGORIES, MUSIC_GENRES, INSTRUMENT_CATEGORIES, IDENTIFIER_TYPES
 from pytypes import *
-from file_parse import extract_interpolations, unique_interpolations, apply_interpolations
+from file_parse import (extract_interpolations, unique_interpolation_map,
+                        resolve_interpolation_args, apply_interpolations)
 import zlib
 
 # Put any files that are an output of the script here. "log.txt" will already exist.
@@ -21,19 +23,21 @@ def main(
         val_type: str = "ssn",
         count: int = 1,
         components: list[str] | None = None,
-        address_args: AddressArgs={},
+        address_args: AddressArgs = cast(AddressArgs, {}),
         state_abbr: bool = True,
         existing_city: bool = True,
-        typo_args: TypoArgs = {
+        typo_args: TypoArgs = cast(TypoArgs, {
             'text': "Example text for typo generation.",
             'typos': list(TYPO_GENERATORS.keys()),
             'typo_weights': [1] * len(TYPO_GENERATORS),
             'typo_rate': 0.1,
             'typos_per_word': 1
-        },
-        color_args: ColorArgs = {},
-        name_args: NameArgs = {},
+        }),
+        color_args: ColorArgs = cast(ColorArgs, {}),
+        name_args: NameArgs = cast(NameArgs, {}),
         name_type: str = "person",
+        identifier_args: IdentifierArgs = cast(IdentifierArgs, {}),
+        identifier_type: str = "email",
         min_val: float = 0,
         max_val: float = 100,
         precision: int = 0,
@@ -85,6 +89,10 @@ def main(
         for _ in range(count):
             results.append(gen_number(min_val, max_val, precision, log=True))
 
+    if val_type == "identifier":
+        for _ in range(count):
+            results.append(gen_identifier(identifier_type, identifier_args, log=True))
+
     print("------- Output -------")
     for result in results:
         print(result)
@@ -96,9 +104,9 @@ def gen_seed(seed_byte_size: int = 16) -> int:
     print(f"Generated random seed {seed} from {seed_byte_size} bytes of entropy.")
     return seed
 
-def derive_seed(base: int, identifier: str) -> int:
+def derive_seed(base: int, identifier: str, seed_byte_size: int = 16) -> int:
     # Derive a new seed based on the base seed and the identifier using a hash function
-    derived_seed = (base + zlib.crc32(identifier.encode())) % (2**32)
+    derived_seed = (base + zlib.crc32(identifier.encode())) % (2**(8 * seed_byte_size))
     return derived_seed
 
 def apply_seed(seed: int):
@@ -108,7 +116,7 @@ def apply_seed(seed: int):
 def parse_args(og_args: list[str]) -> Namespace:
     parser = argparse.ArgumentParser(
         description="Generate fake but realistic numbers, US Social Security Numbers, phone numbers, addresses, typos, names, and colors for testing purposes.",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
+        formatter_class=argparse.RawDescriptionHelpFormatter
     )
 
     parser.add_argument(
@@ -131,7 +139,7 @@ def parse_args(og_args: list[str]) -> Namespace:
 
     parser.add_argument(
         'type',
-        choices=['ssn', 'phone', 'address', 'typos', 'color', 'name', 'number'],
+        choices=['ssn', 'phone', 'address', 'typos', 'color', 'name', 'number', 'identifier'],
         default='ssn',
         nargs='?',
         help="Type of information to generate (default: ssn)"
@@ -222,20 +230,32 @@ def parse_args(og_args: list[str]) -> Namespace:
     parser.add_argument('--exact-b', '-b', type=rgb_bound_type, default=None, help="Exact blue value for color generation (0-255). If specified, overrides min and max blue values.")
 
     # Specific arguments for name generation
+    def full_name_type(s: str) -> str:
+        if s.count(' ') < 1:
+            raise argparse.ArgumentTypeError("Full name must contain at least a first name and a last name separated by space.")
+        return s
+
     parser.add_argument(
         '--name-type', '-nt',
         choices=NAME_TYPES,
         default='person',
         help="Type of name to generate (default: person)"
     )
-    parser.add_argument('--first-name', '-fn', help="First name to use for person name generation")
-    parser.add_argument('--last-name', '-ln', help="Last name to use for person name generation")
+    parser.add_argument('--first-name', '-fn', help="First name to use for person name and username/email generation")
+    parser.add_argument('--last-name', '-ln', help="Last name to use for person name and username/email generation")
     parser.add_argument(
         '--gender', '-ge',
         choices=['male', 'female', 'nb'],
         default=None,
-        help="Gender for person/job name generation (default: random)"
+        help="Gender for person/job name and username/email generation (default: random)"
     )
+    parser.add_argument(
+        "--full_name", "-fln",
+        type=full_name_type,
+        nargs='?',
+        help="Full name to use for person name generation. If provided, will be split into first and last name components and override --first-name and --last-name."
+    )
+
     parser.add_argument(
         '--file-category', '-fc',
         choices=FILE_CATEGORIES,
@@ -243,12 +263,6 @@ def parse_args(og_args: list[str]) -> Namespace:
         help="File category for file_name generation"
     )
     parser.add_argument('--file-type', '-ft', help="File extension for file_name generation (overrides --file-category)")
-    parser.add_argument(
-        '--email-category', '-ec',
-        choices=EMAIL_CATEGORIES,
-        default=None,
-        help="Email category for email generation"
-    )
     parser.add_argument('--subdomains', '-sd', type=subdomain_count_type, default=1, help="Number of subdomains for website generation (default: 1)")
     parser.add_argument(
         '--parent-music-genre', '-pmg',
@@ -275,12 +289,23 @@ def parse_args(og_args: list[str]) -> Namespace:
         except ValueError:
             raise argparse.ArgumentTypeError("Precision must be a non-negative integer.")
         
-    parser.add_argument('--min', '-mn', type=float, default=0, help="Minimum value for number generation (default: 0)")
-    parser.add_argument('--max', '-mx', type=float, default=100, help="Maximum value for number generation (default: 100)")
+    parser.add_argument('--min', '-mn', type=float, default=0, help="Minimum value for number and username/email generation (default: 0)")
+    parser.add_argument('--max', '-mx', type=float, default=100, help="Maximum value for number and username/email generation (default: 100)")
     parser.add_argument(
         '--precision', '-p', type=precision_type, default=0,
         help="Number of decimal places for number generation. Must be a non-negative integer (default: 0)"
     )
+
+    # Specific arguments for identifier generation
+    parser.add_argument(
+        '--identifier-type', '-idt',
+        choices=IDENTIFIER_TYPES,
+        default='email',
+        help="Type of identifier to generate (default: email)"
+    )
+    parser.add_argument('--user-name', '-un', help="Username to use for email generation")
+    parser.add_argument('--domain', '-dm', help="Domain to use for email generation")
+    parser.add_argument('--domain-type', '-dt', choices=['personal', 'business'], default=None, help="Type of domain to use for email generation if domain is not specified (default: random)")
 
     # File input argument for interpolation processing
     parser.add_argument(
@@ -297,6 +322,13 @@ def parse_args(og_args: list[str]) -> Namespace:
 
     # Argument processing
     args = parser.parse_args(og_args)
+
+    if args.full_name:
+        if args.first_name or args.last_name:
+            warn("Full name provided; overriding first name and last name arguments.")
+        split = args.full_name.split()
+        args.first_name = split[0]
+        args.last_name = split[-1]
 
     if args.clean_dirty_colors:
         clean_dirty_colors()
@@ -381,20 +413,62 @@ def main_exec(args: Namespace) -> list[str]:
         name_args['file_category'] = args.file_category
     if args.file_type is not None:
         name_args['file_type'] = args.file_type
-    if args.email_category is not None:
-        name_args['email_category'] = args.email_category
     name_args['subdomains'] = args.subdomains
     if args.parent_music_genre is not None:
         name_args['music_genre'] = args.parent_music_genre
     if args.music_instrument_category is not None:
         name_args['music_instrument_category'] = args.music_instrument_category
 
+    identifier_args: IdentifierArgs = {}
+    if args.first_name is not None:
+        identifier_args['first_name'] = args.first_name
+    if args.last_name is not None:
+        identifier_args['last_name'] = args.last_name
+    if args.gender is not None:
+        identifier_args['gender'] = args.gender
+    if args.user_name is not None:
+        identifier_args['username'] = args.user_name
+    if args.domain is not None:
+        identifier_args['domain'] = args.domain
+    if args.min is not None:
+        identifier_args['min'] = args.min
+    if args.max is not None:
+        identifier_args['max'] = args.max
+    if args.domain_type is not None:
+        identifier_args['domain_type'] = args.domain_type
+
     return main(
         args.type, args.count, components, address_args,
         not args.no_state_abbr, not args.no_existing_city,
         typo_args, color_args, name_args=name_args, name_type=args.name_type,
+        identifier_args=identifier_args, identifier_type=args.identifier_type,
         min_val=args.min, max_val=args.max, precision=args.precision
     )
+
+def _topo_sort_interpolations(interp_map: dict) -> list[str]:
+    """Return interpolation IDs ordered so each dependency precedes its dependents."""
+    visited: set[str] = set()
+    order: list[str] = []
+
+    def visit(ident: str, ancestors: set[str]):
+        if ident in ancestors:
+            raise ValueError(f"Circular dependency in interpolations involving '{ident}'")
+        if ident in visited:
+            return
+        for dep in interp_map[ident].result_deps:
+            if dep not in interp_map:
+                raise ValueError(
+                    f"Interpolation '{ident}' references $({{dep}}), but '{dep}' is not defined"
+                )
+            visit(dep, ancestors | {ident})
+        visited.add(ident)
+        order.append(ident)
+
+    for ident in interp_map:
+        visit(ident, set())
+
+    return order
+
 
 if __name__ == "__main__":
     args = parse_args(sys.argv[1:])
@@ -409,37 +483,50 @@ if __name__ == "__main__":
         interpolations = extract_interpolations(text)
 
         print(f"Found {len(interpolations)} interpolation(s) in the file.")
-        print("------- Processing Interpolations -------")
 
-        values = {}
-        for ident, inner_args_lst in unique_interpolations(interpolations).items():
-            inner_args = parse_args(inner_args_lst)
+        outputs: list[str] = []
+        for i in range(args.count):
+            marker = f"{i + 1}/{args.count}"
+            print(f"------- Processing Interpolations ({marker}) -------")
 
-            inner_args.count = 1  # Override count to 1 for each interpolation
-            if inner_args.seed is None:
-                # Use main seed if no seed provided for interpolation
-                inner_args.seed = args.seed
+            values = {}
+            interp_map = unique_interpolation_map(interpolations)
+            for ident in _topo_sort_interpolations(interp_map):
+                inner_args_lst = resolve_interpolation_args(interp_map[ident], values)
+                try:
+                    inner_args = parse_args(inner_args_lst)
+                except SystemExit:
+                    print(f"Unexpected exit while parsing arguments for interpolation '{ident}'. Arguments: {inner_args_lst}")
+                    raise
 
-                if inner_args.seed is not None:
-                    # Vary the seed based on the identifier to ensure different results
-                    # for each interpolation, but in a deterministic way
-                    inner_args.seed += derive_seed(args.seed, ident)
+                # Vary the seed based on the identifier to ensure different results
+                # for each interpolation, but in a deterministic way. Add the index
+                # to ensure the same file generates differently on each run.
+                inner_args.seed = derive_seed(inner_args.seed if inner_args.seed is not None else args.seed, f"{i}_{ident}", args.seed_byte_size)
+                
+                print(f"------- Processing '{ident}' ({marker}) -------")
+                results = main_exec(inner_args)
+                print("------- End Generation -------")
+                
+                # Get the last result so that the count argument can be used to force N
+                # generations before a final value (could be useful if using seeds in interpolations)
+                result = results[-1] if results else ""
+                if inner_args.type == "color" and result:
+                    # Get just the part that comes before the first dash, and strip whitespace
+                    result = result.split('-')[0].strip()
+
+                if result:
+                    print(f"Generated value for id '{ident}': {result}")
+                    values[ident] = result
+                
+                i += 1
             
-            print(f"------- Processing '{ident}' -------")
-            results = main_exec(inner_args)
-            print("------- End Generation -------")
-            
-            result = results[0] if results else ""
-            if inner_args.type == "color" and result:
-                # Get just the part that comes before the first dash, and strip whitespace
-                result = result.split('-')[0].strip()
-
-            if result:
-                print(f"Generated value for id '{ident}': {result}")
-                values[ident] = result
+            outputs.append(apply_interpolations(text, values))
         
-        print("------- Final Output -------")
-        final_text = apply_interpolations(text, values)
-        print(final_text)
+        print("------- Final Outputs -------")
+        for i in range(args.count):
+            print(f"------- {i + 1}/{args.count} -------")
+            print(outputs[i])
+            
     else:
         main_exec(args)
