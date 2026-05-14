@@ -253,7 +253,7 @@ def parse_args(og_args: list[str]) -> Namespace:
         "--full_name", "-fln",
         type=full_name_type,
         nargs='?',
-        help="Full name to use for person name generation. If provided, will be split into first and last name components and override --first-name and --last-name."
+        help="Full name to use for person name/username/email generation. If provided, will be split into first and last name components and override --first-name and --last-name."
     )
 
     parser.add_argument(
@@ -315,9 +315,7 @@ def parse_args(og_args: list[str]) -> Namespace:
         help=
             "Path to input file. If provided, will read the file and "
             "generate output for each interpolation token found, then "
-            "substitute them in the text and print the final result. "
-            "Interpolation token format: {{id: args}} or {{id}} (back "
-            "reference to previously defined id with args)."
+            "substitute them in the text and print the final result."
     )
 
     # Argument processing

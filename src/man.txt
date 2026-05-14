@@ -1,1217 +1,175 @@
-INFO-GEN(1)                       User Commands                      INFO-GEN(1)
-
 NAME
-       info-gen - generate fake US Social Security Numbers, phone numbers, addresses, text with typos, colors, names, numbers, and identifiers (emails, usernames)
+    info-gen — generate fake or fake-like data for testing.
+
+SYNOPSIS
+    main.py [TYPE [COUNT]] [OPTIONS]
+    main.py -f FILE [COUNT] [OPTIONS]
+
+INVOCATION
+    Run via `make start ARGS="..."` or `uv run src/main.py ...`.
+    Running directly will cause log file issues.
+    All arguments documented below are forwarded to main.py. See
+    `make-man.txt` for the full set of make targets.
 
 DESCRIPTION
-       info-gen generates fake but realistic US Social Security Numbers (SSNs),
-       phone numbers, addresses, text with realistic typos, colors, names,
-       random numbers, and identifiers (emails, usernames) for testing purposes.
-       The tool intelligently uses reserved/invalid number ranges by default to
-       ensure generated values do not correspond to real people. For typo
-       generation, it provides various typo types based on common typing errors.
-       For color generation, it uses a database of color names (recommended to
-       take from https://colornamer.robertcooper.me/ with over 30,000 color
-       entries) to provide human-readable names for generated colors. For name
-       generation, it uses the Faker library (with additional providers for
-       music and vehicles) to generate realistic names across many categories
-       including people, companies, files, and more. For identifier generation,
-       it creates emails and usernames derived from realistic name components.
-
-       IMPORTANT: This script MUST be run via the makefile targets. Direct
-       invocation of main.py is NOT supported and will cause failures.
-
-       The makefile handles critical functionality including:
-         - Creating timestamped output directories (src/outputs/main/YYYY/MM/DD/HH-MM-SS/)
-         - Capturing all output to log.txt files via tee
-         - Ensuring the script can locate its output directory
-
-       If you run the script directly without the makefile:
-         - The script will attempt to find the latest output directory
-         - If no output directory exists for today's date, the script will CRASH
-           with a FileNotFoundError or AttributeError when scanning for directories
-         - If an old output directory exists from a previous run, the script will
-           incorrectly use that directory, potentially overwriting old logs or
-           causing confusion about which output corresponds to which run
-         - No log.txt file will be created, and all output will be lost to the
-           terminal with no persistent record
-
-       For SSNs, the tool uses reserved ranges (000, 666, 900-999) for the
-       first three digits when not specified. For phone numbers, it uses the
-       fictional range XXX-555-0100 to XXX-555-0199 when components are not
-       specified.
-
-       Address generation uses intelligent lookup to ensure consistency.
-       If a zip code is provided, the city/state will be derived from it
-       (if not already specified). If city/state are provided without a
-       zip, a matching zip code will be looked up. If a city is provided
-       without a state, states with that city will be looked up, and a
-       random one of those states will be selected (if none exist, random
-       state). Multiple matching zips result in random selection. Unmatched
-       values fall back to random generation with warnings.
-
-ARGUMENTS
-       --clean-dirty-colors, -cdc
-              If set, will clean up the file at `assets/colors-dirty.json` by
-              extracting valid color entries (and only the parts needed: name and rgb)
-              and writing them to `assets/colors.json`, then abort without running
-              further. This is a utility flag used to preprocess color data before
-              the main generation functionality.
-
-       TYPE
-              Type of information to generate. Must be one of:
-                ssn        - Generate Social Security Number(s)
-                phone      - Generate phone number(s)
-                address    - Generate US address(es)
-                typos      - Generate text with realistic typos
-                color      - Generate random color(s) with names and formats
-                name       - Generate name(s) (people, companies, files, etc.)
-                number     - Generate random number(s) in a specified range
-                identifier - Generate identifier(s) (emails, usernames)
-              Default: ssn
-
-       COUNT
-              Number of identifiers to generate. Must be a positive integer.
-              Default: 1
-
-       --seed, -s SEED
-              Optional seed for random number generators. When specified, this integer
-              value seeds both the Python random module and the Faker library, producing
-              deterministic and reproducible results. Running the tool multiple times
-              with the same seed and arguments will generate identical output.
-
-              This is useful for:
-                - Testing and debugging (reproducible test data)
-                - Generating consistent datasets across multiple runs
-                - Creating reproducible examples and demonstrations
-
-              If not specified, a random seed is automatically generated using
-              os.urandom() and displayed in the output. This allows you to reproduce
-              the same results by copying the displayed seed value and using it in
-              subsequent runs with the --seed option.
-
-              The short form -s can be used interchangeably with --seed.
-
-       --seed-byte-size, -sb SIZE
-              Number of random bytes to use when automatically generating a seed
-              (only applies when --seed is not provided). The bytes are read from
-              os.urandom() and converted to an integer seed value.
-
-              Higher values provide more entropy for seed generation:
-                - 16 bytes = 128 bits of entropy (default)
-                - 32 bytes = 256 bits of entropy
-                - 8 bytes = 64 bits of entropy
-
-              This parameter has no effect when --seed is explicitly provided.
-              Default: 16
-
-              The short form -sb can be used interchangeably with --seed-byte-size.
-
-       --components, -c COMPONENTS...
-              Optional component values for the identifier. This flag specifies
-              custom patterns or fixed values for parts of the generated identifier.
-              If omitted, random values using reserved ranges are generated.
-
-              Components can be:
-                - Fixed values (use digits: "666", "555", "0100")
-                - Pattern values (use 'x' or non-digits for random: "xxx", "01xx")
-                - Omitted (use "none" or "null" to force random generation)
-
-              For SSN, up to three components are accepted:
-                START  - First 3 digits (000-999)
-                MID    - Middle 2 digits (00-99)
-                END    - Last 4 digits (0000-9999)
-
-              For PHONE, up to three components are accepted:
-                AREA    - Area code (200-999)
-                CENTRAL - Central office code (200-999)
-                LINE    - Line number (0000-9999)
-
-              Components can be specified space-separated or dash-separated.
-              Values outside valid ranges are automatically clamped.
-
-              The short form -c can be used interchangeably with --components.
-       --building_number BUILDING_NUMBER
-              For generating addresses, specify the building/house number.
-       --street STREET
-              For generating addresses, specify the street name.
-       --city CITY
-              For generating addresses, specify the city name.
-       --state STATE
-              For generating addresses, specify the state name or abbreviation. If
-              this is not a valid state, a random state will be generated instead.
-       --zip ZIP
-              For generating addresses, specify the ZIP code. If this is not a valid zip code, a
-              random zip code will be generated instead.
-       --no-state-abbr
-              For generating addresses, output the full state name instead of the abbreviation.
-       --no-existing-city
-              For generating addresses, instead of picking a city in a resolved state, generate a
-              completely random city name.
-
-       --text, -t TEXT
-              For generating typos, specify the text to apply typos to. Text should only
-              contain keyboard characters and spaces.
-              Default: "Example text for typo generation."
-
-       --typos, -ts TYPO_TYPES...
-              For generating typos, specify which typo types to apply. Multiple types can be
-              specified. Available types:
-                let-ins      - Insert random letters
-                let-sub      - Substitute letters with random letters
-                digit-ins    - Insert random digits
-                digit-sub    - Substitute characters with random digits
-                char-ins     - Insert random keyboard characters
-                char-sub     - Substitute with random keyboard characters
-                kb-ins       - Insert characters near the original key on keyboard
-                kb-sub       - Substitute with nearby keyboard keys
-                kb-ins-as    - Insert characters near the original key (account for shift)
-                kb-sub-as    - Substitute with nearby keyboard keys (account for shift)
-                trans        - Transpose adjacent characters
-                del          - Delete characters
-                case         - Change character case (upper/lower)
-                word-dup     - Duplicate entire words
-                dbl-miss     - Miss double letters (e.g., "letter" -> "leter")
-                dbl-ins      - Insert extra double letters (e.g., "letter" -> "lettter")
-                filler-ins   - Insert filler words (like, um, uh, etc.)
-                homophone    - Replace words with homophones (e.g., "their" -> "there")
-              Default: all types
-
-       --typo-weights, -tw WEIGHTS...
-              For generating typos, specify the relative weight for each typo type.
-              Weights should be positive integers corresponding to the order of types
-              specified in --typos. Higher weights make that typo type more likely.
-              If not specified, all types have equal weight (1).
-
-       --typo-rate, -tr RATE
-              For generating typos, specify the probability (0.0-1.0) of applying a typo
-              to each word in the text.
-              Default: 0.1
-
-       --typos-per-word, -tpw COUNT
-              For generating typos, specify the maximum number of typos to apply per word
-              when a word is selected for typo application.
-              Default: 1
-
-       --min-r VALUE
-              For generating colors, specify the minimum red value (0-255).
-              Default: 0
-
-       --max-r VALUE
-              For generating colors, specify the maximum red value (0-255).
-              Default: 255
-
-       --exact-r, -r VALUE
-              For generating colors, specify an exact red value (0-255).
-              If specified, overrides min-r and max-r for the red component.
-
-       --min-g VALUE
-              For generating colors, specify the minimum green value (0-255).
-              Default: 0
-
-       --max-g VALUE
-              For generating colors, specify the maximum green value (0-255).
-              Default: 255
-
-       --exact-g, -g VALUE
-              For generating colors, specify an exact green value (0-255).
-              If specified, overrides min-g and max-g for the green component.
-
-       --min-b VALUE
-              For generating colors, specify the minimum blue value (0-255).
-              Default: 0
-
-       --max-b VALUE
-              For generating colors, specify the maximum blue value (0-255).
-              Default: 255
-
-       --exact-b, -b VALUE
-              For generating colors, specify an exact blue value (0-255).
-              If specified, overrides min-b and max-b for the blue component.
-
-       --name-type, -nt NAME_TYPE
-              For generating names, specify the type of name to generate.
-              Must be one of:
-                company          - Generate a company name
-                file_name        - Generate a file name with extension
-                website          - Generate a website domain name
-                job              - Generate a job title
-                person           - Generate a person's full name
-                music_genre      - Generate a music genre/subgenre
-                music_instrument - Generate a musical instrument name
-                vehicle          - Generate a vehicle year/make/model
-              Default: person
-
-       --first-name, -fn FIRST_NAME
-              For generating person names and identifiers, specify the first
-              name to use. If not specified, a random first name is generated
-              based on gender.
-
-       --last-name, -ln LAST_NAME
-              For generating person names and identifiers, specify the last
-              name to use. If not specified, a random last name is generated
-              based on gender.
-
-       --full-name, -fln FULL_NAME
-              For generating person names, specify the full name (at least two
-              space-separated words). The first word is used as the first name
-              and the last word as the last name. If provided, overrides
-              --first-name and --last-name.
-
-       --gender, -ge GENDER
-              For generating person names, job names, and identifiers, specify
-              the gender.
-              Must be one of: male, female, nb
-              For person names, "nb" generates a non-binary name.
-              For job names and identifiers, "nb" selects a random gender
-              internally.
-              If not specified, a random gender is chosen.
-
-       --file-category, -fc CATEGORY
-              For generating file names, specify the file category.
-              Must be one of: audio, image, office, text, video
-              If not specified, a random category is chosen.
-              Ignored if --file-type is also provided.
-
-       --file-type, -ft EXTENSION
-              For generating file names, specify the file extension directly.
-              Overrides --file-category if both are provided.
-
-       --subdomains, -sd COUNT
-              For generating website domain names, specify the number of
-              subdomains to include.
-              Must be a positive integer.
-              Default: 1
-
-       --parent-music-genre, -pmg GENRE
-              For generating music genres, specify the parent genre to select
-              a subgenre from. The value is matched case-insensitively against
-              the available parent genres from the faker-music library.
-              If not specified, a random parent genre is chosen.
-
-       --music-instrument-category, -mic CATEGORY
-              For generating musical instruments, specify the instrument
-              category. The value is matched case-insensitively against the
-              available categories from the faker-music library.
-              If not specified, a random category is chosen.
-
-       --min, -mn VALUE
-              For generating numbers and usernames, specify the minimum value
-              (inclusive). For numbers, accepts integer or float values. For
-              usernames, this is the minimum numeric suffix value (integer).
-              Default: 0
-
-       --max, -mx VALUE
-              For generating numbers and usernames, specify the maximum value
-              (inclusive). For numbers, accepts integer or float values. For
-              usernames, this is the maximum numeric suffix value (integer).
-              Default: 100
-
-       --precision, -p PRECISION
-              For generating numbers, specify the number of decimal places in
-              the output. Must be a non-negative integer. When 0, an integer is
-              generated using randint. When greater than 0, a float is generated
-              and rounded to the specified number of decimal places.
-              Default: 0
-
-       --file, -f FILE
-              Path to a template text file containing interpolation tokens.
-              When provided, main.py reads the file, resolves every
-              interpolation token, and prints the final substituted text.
-              All other positional/generation arguments are ignored; each
-              token carries its own arguments inline.
-
-              Interpolation token syntax:
-                {{id: type [count] [options]}}   - defines id with CLI args
-                {{id}}                           - back-reference; reuses the
-                                                   args and value of the first
-                                                   occurrence of id
-
-              The id is any sequence of word characters (letters, digits,
-              underscore).  The arguments after the colon are identical to
-              what you would pass on the command line (e.g. "ssn 1 --seed 42").
-              All occurrences of the same id receive the same generated value.
-              If a token omits --seed, the outer --seed (if any) is inherited.
-
-              See FILE INTERPOLATION for full details and examples.
-
-       --identifier-type, -idt IDENTIFIER_TYPE
-              For generating identifiers, specify the type to generate.
-              Must be one of:
-                email    - Generate an email address
-                username - Generate a username
-              Default: email
-
-       --user-name, -un USER_NAME
-              For generating email addresses, specify the username portion
-              (the part before @). If not specified, a username is generated
-              automatically using --first-name / --last-name (or random names
-              if those are not provided).
-
-       --domain, -dm DOMAIN
-              For generating email addresses, specify the domain (the part
-              after @). If not specified, a random domain is generated based
-              on --domain-type.
-
-       --domain-type, -dt DOMAIN_TYPE
-              For generating email addresses when --domain is not specified,
-              control the style of the generated domain.
-              Must be one of: personal, business
-              personal  - Use a well-known free email provider domain
-              business  - Use a randomly generated company domain name
-              If not specified, a random domain type is chosen.
-
-FILE INTERPOLATION
-       When --file (-f) is provided, main.py operates in template mode
-       instead of direct generation mode.
-
-       Token format:
-              {{id: type [count] [options]}}
-              {{id}}
-
-       id     An identifier composed of word characters (\w+).  All tokens
-              sharing the same id will be replaced with the same generated
-              value.
-
-       First occurrence
-              Must include a colon followed by the full argument list exactly
-              as you would pass it on the command line:
-                {{ssn1: ssn 1 --seed 42}}
-                {{addr: address 1 --city Boston --state MA}}
-                {{clr: color 1 --min-r 200}}
-
-       Result references
-              A token's argument list may reference the already-generated
-              result of another token using $(other_id):
-                {{name1: name 1}}
-                {{email1: identifier 1 --user-name $(name1)}}
-
-              $(other_id) is substituted with the resolved value of
-              other_id before the argument list is parsed.  Dependencies are
-              executed in topological order — you do not need to arrange
-              tokens manually.  Circular references and references to
-              undefined ids raise errors.
-
-       Back-references
-              Subsequent uses of the same id may omit the argument list:
-                {{ssn1}}          <- same value as the first {{ssn1: ...}}
-
-              If a later token does include arguments, they must exactly
-              match the raw args string of the first occurrence or an error
-              is raised.
-
-       Processing order
-              1. The file is scanned left-to-right; the first occurrence of
-                 each id defines its argument template.
-              2. Ids are sorted topologically so every dependency is
-                 resolved before the tokens that reference it.
-              3. main_exec() is called once per unique id.
-              4. Every token (including back-references) is replaced with
-                 that id's result.
-              5. The substituted text is printed to stdout.
-
-       Multiple outputs (COUNT)
-              When COUNT is provided on the command line, the entire template
-              is processed COUNT times and each output is printed separately
-              under a numbered header.  Each run derives independent seeds so
-              the outputs differ even when no explicit --seed is given.
-                make gen-from-file ARGS="3 template.txt"
-
-       Seed behaviour in template mode
-              Each id's argument list is parsed and executed independently.
-              Every token — with or without an explicit --seed — receives a
-              seed derived from the outer --seed (or the auto-generated seed)
-              combined with the token identifier and the run index via
-              zlib.crc32.  This guarantees that each unique id and each
-              repetition (when COUNT > 1) receives a distinct but fully
-              reproducible seed.  To embed a fixed seed inside a token, use
-              a result reference rather than --seed directly.
-
-       Example template file (template.txt):
-              Name:  {{name1: name 1}}
-              SSN:   {{ssn1: ssn 1}}
-              Email: {{email1: identifier 1 --user-name $(name1)}}
-              Also known as {{name1}} with SSN {{ssn1}}.
-
-       Running:
-              make gen-from-file ARGS="template.txt"
-
-       Might produce:
-              Name:  Alice Smith
-              SSN:   666-42-8801
-              Email: alicesmith42@gmail.com
-              Also known as Alice Smith with SSN 666-42-8801.
-
-PATTERN SYSTEM
-       The tool supports a flexible pattern system for components:
-
-       Integer values
-              Exact digits are preserved: "666" generates "666"
-
-       Mixed patterns
-              Digits are preserved, non-digits become random:
-              "6x6" might generate "626", "646", "696", etc.
-              "01xx" might generate "0123", "0187", "0145", etc.
-
-       All non-digits
-              With no digits, generates completely random value in valid range:
-              "xxx" generates any 3-digit number (for SSN start: reserved only)
-              "xxxx" generates any 4-digit number
-
-RESERVED RANGES
-       SSN Reserved Values (used by default for START component):
-              000      - Invalid SSN
-              666      - Invalid SSN
-              900-999  - Invalid SSN range
-
-       Phone Reserved Range (used by default):
-              XXX-555-0100 through XXX-555-0199
-              This range is reserved for fictional use in North America.
-
-       Zip Codes:
-              The tool uses a database of valid US zip codes for address
-              generation and lookup. For random zip codes, all will be 5-digit
-              numbers with leading zeros as needed.
-
-WARNINGS
-       The tool issues warnings when generated values may correspond to real
-       people:
-
-       For SSNs:
-              If the START component (first 3 digits) is not in the reserved
-              range (000, 666, or 900-999), a warning is displayed.
-
-       For Phone Numbers:
-              If CENTRAL is not 555, a warning is displayed.
-              If CENTRAL is 555 but LINE is outside 0100-0199, a warning is
-              displayed.
-
-       For Addresses:
-              If both building_number and street are provided, a warning is
-              displayed since this may correspond to a real location.
-              If provided city/state/zip values are inconsistent, warnings are
-              shown but user-specified values are preserved.
-
-       For Names (job, music_genre, music_instrument, vehicle):
-              These name types are picked from existing databases provided by
-              the Faker library and its additional providers (faker-music,
-              faker-vehicle). Unlike SSNs and phone numbers, which use reserved
-              ranges, these values are drawn from real-world data and will
-              correspond to real job titles, music genres, musical instruments,
-              and vehicle makes/models. They cannot benefit from the same
-              guarantee of not matching anything real.
-
-       For Colors:
-              All generated colors correspond to real RGB values, but the
-              color name is based on the nearest match in the color database,
-              so the name may not perfectly describe the generated color. No
-              warnings are issued for colors since they do not correspond to
-              real entities in the same way as SSNs or phone numbers.
-
-       For Identifiers:
-              Generated usernames and email addresses are constructed from
-              synthetic name components and do not correspond to real accounts.
-              However, if --domain is provided manually, the resulting email
-              address might match a real person's address; use with caution.
+    Generates one or more values of a chosen TYPE, or — with -f —
+    processes a template file containing interpolation tokens and
+    substitutes a generated value for each one. See DATA REALISM
+    below for which outputs are guaranteed fake and which may match
+    a real entity.
+
+POSITIONAL ARGUMENTS
+    type    ssn | phone | address | typos | color | name | number | identifier
+            (default: ssn)
+    count   positive integer (default: 1)
+
+GLOBAL OPTIONS
+    -h, --help                  show argparse help and exit
+    -u, --usage                 show the usage line and exit
+    -m, --manual                show this manual and exit
+    -s,  --seed N               deterministic seed for all RNGs
+    -sb, --seed-byte-size N     entropy bytes when no seed is given
+                                (default: 16)
+    -f,  --file PATH            template-file mode (see FILE MODE)
+    -cdc, --clean-dirty-colors  rewrite assets/colors.json from
+                                assets/colors-dirty.json, then exit
+
+GENERATOR TYPES
+
+    ssn        -c START MID END
+               Each component is digits (fixed) or a non-digit (e.g.
+               'x') for random; 'none'/'null' selects the default for
+               that slot. Default chooses a reserved fake range
+               (start ∈ {000, 666, 900–999}).
+
+    phone      -c AREA CENTRAL LINE
+               Same digit/non-digit convention as ssn. Dash-joined
+               input is also accepted (e.g. `-c 555-555-0100`).
+               Defaults use the reserved fake range
+               (central=555, line 100–199).
+
+    number     --min FLOAT, --max FLOAT, --precision N
+               Integer when precision=0 (default), float otherwise.
+               --min/--max default to 0/100.
+
+    address    -bn NUM, -ste STREET, -ci CITY, -st STATE, -z ZIP
+               --no-state-abbr   keep full state names
+               --no-existing-city generate a fake city name
+               Real US cities/states/zips are used, but fake streets and
+               building numbers are generated. Provided fields are
+               cross-resolved (ZIP ↔ city/state) where possible.
+               Specifying a fake city is acceptable, but fake states
+               will be rejected.
+
+    color      --min-r N / --max-r N / --exact-r N  (also -g, -b),
+               each 0–255. --exact-* overrides --min-*/--max-*.
+               Output: nearest real color name + RGB/Hex/HSL/CMYK.
+
+    name       --name-type one of: company | person | file_name |
+                                   website | job | music_genre |
+                                   music_instrument | vehicle
+                                   (default: person)
+        person             -fn FIRST, -ln LAST,
+                           -ge {male|female|nb},
+                           -fln "First Last"
+                           (-fln overrides -fn/-ln)
+        file_name          -fc {audio|image|office|text|video},
+                           -ft EXT  (-ft overrides -fc)
+        website            -sd N    subdomain count (default 1)
+        job                -ge {male|female|nb}
+        music_genre        -pmg PARENT_GENRE (case-insensitive;
+                           see --help for valid values)
+        music_instrument   -mic CATEGORY     (case-insensitive;
+                           see --help for valid values)
+        vehicle, company   no extra arguments
+
+    identifier --identifier-type {email | username} (default: email)
+        email     -un USERNAME, -dm DOMAIN,
+                  -dt {personal|business}
+                  Missing parts are generated. When a username is
+                  generated, -fn/-ln/-fln/-ge/--min/--max feed it.
+        username  -fn, -ln, -fln, -ge, --min N, --max N
+                  --min/--max bound the optional trailing number
+                  (defaults 0/100).
+
+    typos      -t TEXT         source text; only keyboard chars +
+                               space allowed
+                               (default: "Example text for typo
+                               generation.")
+               -ts T1 T2 ...   typo categories (see TYPO TYPES;
+                               default: all)
+               -tw W1 W2 ...   non-negative integer weights, paired
+                               1:1 with -ts. Missing weights default
+                               to 1.
+               -tr RATE        per-word probability 0.0–1.0
+                               (default 0.1)
+               -tpw N          max typos per word (default 1)
+
+TYPO TYPES (values for -ts)
+    let-ins, let-sub, digit-ins, digit-sub, char-ins, char-sub,
+    kb-ins, kb-sub, kb-ins-as, kb-sub-as,
+    trans, del, case, word-dup, dbl-miss, dbl-ins,
+    filler-ins, homophone
+
+FILE MODE  (-f PATH)
+    The file is read and every token of the form
+        {{id: TYPE [COUNT] [OPTIONS]}}
+    is parsed as a full main.py argv line, generated, and
+    substituted in place.
+
+    Back-references
+        {{id}}            reuses the value generated for the first
+                          {{id: ...}} occurrence. Repeating an id
+                          with conflicting args is an error.
+
+    Result-references
+        $(other_id)       inside an args template, substitute the
+                          resolved value of another token. The token
+                          for other_id must appear somewhere in the
+                          file; dependencies are resolved by
+                          topological sort, and cycles are rejected.
+
+    The outer COUNT positional applies to the whole template:
+    `-f tmpl.txt 5` regenerates the entire template five times. Each
+    iteration derives a per-token seed so a given id varies across
+    iterations deterministically. For `color` tokens, only the color
+    name (the part before the first dash) is substituted into the
+    template.
+
+    When a template is processed, the final generation is used for
+    substitution.
+
+DATA REALISM
+    Guaranteed fake (never match a real entity by construction):
+        ssn  (default components)
+        phone (default components)
+        address (streets are fake; cities/states/ZIPs are real if you don't override them)
+        number, typos
+        name=company, name=person, name=file_name, name=website
+        identifier  (username and email local-part are synthesized)
+
+    May correspond to real data:
+        color                 nearest real color name (warns at start)
+        name=job              real Faker job titles
+        name=music_genre      real faker_music genres
+        name=music_instrument real faker_music instruments
+        name=vehicle          real make/model/year
+        identifier email      domain may be a real personal or
+                              business domain
+        ssn / phone (overridden) user-supplied components can break
+                              the reserved-range guarantee
 
 EXAMPLES
-       Clean the dirty colors file (utility operation):
-              make start ARGS="--clean-dirty-colors"
-
-       Generate one random SSN (uses reserved range):
-              make gen-ssn
-
-       Generate 5 random SSNs:
-              make gen-ssns ARGS="5"
-
-       Generate SSN with specific first part using --components:
-              make gen-ssn ARGS="--components 666"
-              make gen-ssn ARGS="-c 666 12 3456"
-              make gen-ssn ARGS="--components 666-12-3456"
-
-       Generate multiple SSNs with pattern (6 followed by two random digits):
-              make gen-ssns ARGS="10 --components 6xx"
-              make gen-ssns ARGS="10 -c 6xx"
-
-       Generate SSN with pattern for middle and end components:
-              make gen-ssn ARGS="-c 666 xx xxxx"
-
-       Generate one random phone number (uses 555 reserved range):
-              make gen-phone
-
-       Generate 10 random phone numbers:
-              make gen-phones ARGS="10"
-
-       Generate phone with specific components:
-              make gen-phone ARGS="--components 555 555 0100"
-              make gen-phone ARGS="-c 555-555-0100"
-
-       Generate multiple phones with random area code but reserved central/line:
-              make gen-phones ARGS="5 --components xxx 555 01xx"
-              make gen-phones ARGS="5 -c xxx 555 01xx"
-
-       Generate phone with specific area code, random central and line:
-              make gen-phone ARGS="-c 212"
-
-       Generate 100 completely random (but reserved) SSNs:
-              make gen-ssns ARGS="100"
-
-       Using the generic start target:
-              make start ARGS="ssn 5 --components 666-xx-xxxx"
-              make start ARGS="ssn 5 -c 666-xx-xxxx"
-              make start ARGS="phone 10 -c xxx-555-01xx"
-
-       Generate a random address:
-              make gen-address
-
-       Generate 5 random addresses:
-              make gen-addresses ARGS="5"
-
-       Generate address with specific city:
-              make gen-address ARGS="--city Boston"
-
-       Generate address with specific state:
-              make gen-address ARGS="--state California"
-              make gen-address ARGS="--state CA"
-
-       Generate address with specific zip code:
-              make gen-address ARGS="--zip 02101"
-
-       Generate address with city and state (zip will be looked up):
-              make gen-address ARGS="--city Cambridge --state MA"
-
-       Generate address with all components:
-              make gen-address ARGS="--building_number 123 --street 'Main St' --city Boston --state MA --zip 02101"
-
-       Generate 10 addresses in a specific city:
-              make gen-addresses ARGS="10 --city 'New York' --state NY"
-
-       Generate address with full state name instead of abbreviation:
-              make gen-address ARGS="--state California --no-state-abbr"
-
-       Using the generic start target for addresses:
-              make start ARGS="address 5 --city Seattle --state WA"
-
-       Generate text with default typos:
-              make gen-typos
-
-       Generate text with custom text:
-              make gen-typos ARGS="--text 'The quick brown fox jumps over the lazy dog'"
-              make gen-typos ARGS="-t 'Hello world this is a test'"
-
-       Generate multiple typo variations of the same text:
-              make gen-typos-multi ARGS="5 --text 'Testing typo generation'"
-
-       Generate text with specific typo types only:
-              make gen-typos ARGS="--text 'Sample text' --typos trans del case"
-              make gen-typos ARGS="-t 'Sample text' -ts kb-sub trans"
-
-       Generate text with weighted typo types (keyboard substitution weighted 5x more):
-              make gen-typos ARGS="--text 'Sample' --typos kb-sub trans --typo-weights 5 1"
-
-       Generate text with higher typo rate (50% of words get typos):
-              make gen-typos ARGS="--text 'Hello world' --typo-rate 0.5"
-              make gen-typos ARGS="-t 'Hello world' -tr 0.5"
-
-       Generate text with multiple typos per word:
-              make gen-typos ARGS="--text 'Testing' --typos-per-word 3"
-              make gen-typos ARGS="-t 'Testing' -tpw 3"
-
-       Using the generic start target for typos:
-              make start ARGS="typos 10 --text 'Test string' --typos kb-sub trans del"
-
-       Generate a random color:
-              make gen-color
-
-       Generate 5 random colors:
-              make gen-colors ARGS="5"
-
-       Generate a color with specific RGB values:
-              make gen-color ARGS="--exact-r 255 --exact-g 0 --exact-b 0"
-              make gen-color ARGS="-r 255 -g 0 -b 0"
-
-       Generate colors with red values between 200-255:
-              make gen-colors ARGS="10 --min-r 200 --max-r 255"
-
-       Generate colors with specific green and random red/blue:
-              make gen-color ARGS="--exact-g 128"
-              make gen-color ARGS="-g 128"
-
-       Generate multiple colors with constrained RGB ranges:
-              make gen-colors ARGS="20 --min-r 100 --max-r 200 --min-g 50 --max-g 150"
-
-       Using the generic start target for colors:
-              make start ARGS="color 5 --min-r 128 --max-r 255"
-
-       Generate a random person name:
-              make gen-name
-
-       Generate 5 random person names:
-              make gen-names ARGS="5"
-
-       Generate a person name with a specific gender:
-              make gen-name ARGS="--gender female"
-              make gen-name ARGS="-ge male"
-
-       Generate a person name with a specific first name:
-              make gen-name ARGS="--first-name Alice"
-              make gen-name ARGS="-fn Bob"
-
-       Generate a person name with both first and last name specified:
-              make gen-name ARGS="--first-name Alice --last-name Smith"
-
-       Generate a person name with a full name:
-              make gen-name ARGS="--full-name 'Alice Smith'"
-
-       Generate a company name:
-              make gen-name ARGS="--name-type company"
-              make gen-name ARGS="-nt company"
-
-       Generate a file name with a specific category:
-              make gen-name ARGS="-nt file_name --file-category image"
-              make gen-name ARGS="-nt file_name -fc audio"
-
-       Generate a file name with a specific extension:
-              make gen-name ARGS="-nt file_name --file-type .csv"
-
-       Generate a website domain name with subdomains:
-              make gen-name ARGS="-nt website --subdomains 3"
-
-       Generate a job title with a specific gender:
-              make gen-name ARGS="-nt job --gender female"
-
-       Generate a music genre from a specific parent genre:
-              make gen-name ARGS="-nt music_genre --parent-music-genre Rock"
-
-       Generate a musical instrument from a specific category:
-              make gen-name ARGS="-nt music_instrument --music-instrument-category Strings"
-
-       Generate a vehicle name:
-              make gen-name ARGS="-nt vehicle"
-
-       Generate 10 random names of various types:
-              make gen-names ARGS="10 --name-type company"
-
-       Using the generic start target for names:
-              make start ARGS="name 5 --name-type person --gender female"
-
-       Generate a random integer (0-100 by default):
-              make gen-number
-
-       Generate 5 random integers between 1 and 50:
-              make gen-numbers ARGS="5 --min 1 --max 50"
-
-       Generate a random float with 2 decimal places:
-              make gen-number ARGS="--min 0.0 --max 1.0 --precision 2"
-
-       Generate 10 floats between -5 and 5 with 3 decimal places:
-              make gen-numbers ARGS="10 --min -5 --max 5 --precision 3"
-
-       Using the generic start target for numbers:
-              make start ARGS="number 5 --min 100 --max 999"
-
-       Generate a random email address:
-              make start ARGS="identifier 1"
-
-       Generate 5 email addresses:
-              make start ARGS="identifier 5"
-
-       Generate an email with a specific domain type:
-              make start ARGS="identifier 1 --domain-type personal"
-              make start ARGS="identifier 1 --domain-type business"
-
-       Generate an email with a specific domain:
-              make start ARGS="identifier 1 --domain example.com"
-
-       Generate an email with a specific username:
-              make start ARGS="identifier 1 --user-name alice"
-
-       Generate an email derived from a specific person's name:
-              make start ARGS="identifier 1 --first-name Alice --last-name Smith"
-
-       Generate an email derived from a gendered name:
-              make start ARGS="identifier 1 --gender female"
-
-       Generate a random username:
-              make start ARGS="identifier 1 --identifier-type username"
-
-       Generate a username with numeric suffix range 1000-9999:
-              make start ARGS="identifier 1 --identifier-type username --min 1000 --max 9999"
-
-       Generate a username with a specific first/last name:
-              make start ARGS="identifier 1 --identifier-type username --first-name Alice --last-name Smith"
-
-       Process a template file:
-              make gen-from-file ARGS="template.txt"
-
-       Template file using multiple types and back-references:
-              # Contents of template.txt:
-              # Hello, {{name1: name 1}}! Your SSN is {{ssn1: ssn 1}}.
-              # Please confirm your name: {{name1}} and SSN: {{ssn1}}.
-              make gen-from-file ARGS="template.txt"
-
-       Template file using result references (email derived from generated name):
-              # Contents of template.txt:
-              # {{name1: name 1}}
-              # {{email1: identifier 1 --user-name $(name1)}}
-              make gen-from-file ARGS="template.txt"
-
-       Template file generating 3 independent outputs:
-              make gen-from-file ARGS="3 template.txt"
-
-       Template file with seeded values for reproducibility:
-              # {{addr1: address 1 --city Seattle --state WA}}
-              make gen-from-file ARGS="template.txt"
-
-       Generate deterministic results with a seed:
-              make gen-ssn ARGS="--seed 42"
-              make gen-ssns ARGS="5 --seed 12345"
-              make gen-phone ARGS="--seed 999"
-              make gen-addresses ARGS="10 --seed 7 --city Boston"
-              make gen-typos ARGS="--seed 100 --text 'Testing'"
-
-       Generate same results across multiple runs using the same seed:
-              make gen-ssns ARGS="3 --seed 42"
-              make gen-ssns ARGS="3 --seed 42"  # Will produce identical output
-
-       Reproduce results from a previous run:
-              # First run (no seed specified, auto-generated seed is displayed)
-              make gen-ssn
-              # Output shows: "No seed provided. Generated random seed 12345678... from 16 bytes of entropy."
-              # Later run (use the displayed seed to get the same result)
-              make gen-ssn ARGS="--seed 12345678..."
-
-       Use more entropy for automatic seed generation:
-              make gen-ssns ARGS="5 --seed-byte-size 32"  # 256 bits of entropy
-              make gen-addresses ARGS="10 -sb 8"  # 64 bits of entropy
-
-OUTPUT FORMAT
-       SSN Format:
-              XXX-XX-XXXX
-              Example: 666-12-3456
-
-       Phone Format:
-              (XXX) XXX-XXXX
-              Example: (555) 555-0100
-
-       Address Format:
-              BUILDING_NUMBER STREET, CITY STATE, ZIP
-              Example: 742 Evergreen Terrace, Springfield IL, 62701
-              With --no-state-abbr: 742 Evergreen Terrace, Springfield Illinois, 62701
-
-       Typos Format:
-              Modified text string with typos applied
-              Example input: "The quick brown fox"
-              Example output: "Teh qwick browwn foz"
-
-       Color Format:
-              COLOR_NAME - rgb(R, G, B), hex: #RRGGBB, hsl(H, S%, L%), cmyk(C%, M%, Y%, K%)
-              Example: Crimson Red - rgb(220, 20, 60), hex: #dc143c, hsl(348.00, 83.33%, 47.06%), cmyk(0.00%, 90.91%, 72.73%, 13.73%)
-
-       Number Format:
-              A plain numeric string — integer or decimal depending on --precision.
-              Example (precision 0): 42
-              Example (precision 2): 3.14
-
-       Name Format:
-              The output format varies by name type:
-                person           - FIRST_NAME LAST_NAME (e.g., "Alice Smith")
-                company          - Company name string (e.g., "Smith LLC")
-                file_name        - Filename with extension (e.g., "report.pdf")
-                website          - Domain name (e.g., "example.com")
-                job              - Job title string (e.g., "Software Engineer")
-                music_genre      - Genre/subgenre string (e.g., "Progressive Rock")
-                music_instrument - Instrument name (e.g., "Violin")
-                vehicle          - Year make model (e.g., "2020 Toyota Camry")
-
-       Identifier Format:
-              The output format varies by identifier type:
-                email    - user@domain (e.g., "alicesmith42@gmail.com")
-                username - Formatted username string (e.g., "alice_smith", "AliceS7")
-
-       Output includes:
-              - Seed information (either "Using seed: X" when a seed is set, or "No seed provided." followed by "Generated random seed X from Y bytes of entropy." when auto-generating)
-              - Transformation messages (when patterns are used for SSN/phone)
-              - Clamping messages (when values are out of range for SSN/phone)
-              - Location lookup messages (for addresses with --city/--state/--zip)
-              - Typo generation messages
-              - Name generation messages (category selection, gender, etc.)
-              - Warnings (when values may be real)
-              - Final results under "------- Output -------" header
-
-LOGGING
-       All output is automatically logged to a timestamped directory:
-              src/outputs/main/YYYY/MM/DD/HH-MM-SS/log.txt
-
-       This includes stdout, stderr, transformation messages, and warnings.
-       The makefile automatically creates this directory structure and uses
-       tee to display output to the console while simultaneously writing to
-       the log file.
-
-       CRITICAL: This logging functionality is ONLY available when running
-       via the makefile. Direct script invocation will either:
-         1. CRASH if no output directory exists for the current date
-         2. Use an incorrect/stale output directory from a previous run
-         3. Fail to create log.txt, losing all output permanently
-
-FILES
-       src/main.py
-              Main script containing generation logic
-
-       src/file_parse.py
-              Template file parser: extract_interpolations(), unique_interpolations(),
-              apply_interpolations()
-
-       src/typo/main.py
-              Typo generator classes and logic
-
-       src/typo/vars.py
-              Character sets and variables used for typo generation
-
-       src/utils/output.py
-              Utility functions for output directory management
-
-       src/utils/location.py
-              Functions for US location lookups (cities, states, zip codes)
-
-       src/utils/math.py
-              Utility functions for math operations (e.g., clamping, random selection)
-
-       src/utils/text.py
-              Utility functions for string casing conversion (to_casing, get_casing)
-              and the CASING_TYPES constant
-
-       src/utils/component.py
-              Functions for parsing and applying component patterns
-
-       src/utils/colors/main.py
-              Color conversion utilities and color name database management
-
-       src/utils/colors/types.py
-              Color data types and classes
-       
-       src/typo_test.py
-              Test script for typo generation functionality
-       
-       src/colors_test.py
-              Test script for color generation functionality
-       
-       src/location_test.py
-              Test script for location lookup functionality
-
-       generators/phone.py
-              Functions for generating phone numbers
-       
-       generators/ssn.py
-              Functions for generating Social Security Numbers
-
-       generators/address/main.py
-              Functions for generating US addresses
-
-       generators/address/types.py
-              Address data types and classes
-       
-       generators/typos/main.py
-              Functions for generating text with typos
-
-       generators/typos/types.py
-              Typo data types and classes
-
-       generators/colors/main.py
-              Functions for generating random colors and finding nearest color names
-
-       generators/colors/types.py
-              Color data types and classes
-
-       generators/name/main.py
-              Functions for generating names across various categories
-
-       generators/name/pytypes.py
-              Name argument data types and classes
-
-       generators/name/vars.py
-              Name type lists, file categories, music genres, and instrument
-              categories
-
-       generators/identifier/main.py
-              Functions for generating email addresses and usernames
-
-       generators/identifier/pytypes.py
-              Identifier argument data types and classes
-
-       generators/identifier/vars.py
-              Identifier type list and username scheme templates
-
-       generators/number.py
-              Function for generating random numbers within a specified range
-              and precision
-
-       src/fake.py
-              Shared Faker instance holder with provider registration
-
-       makefile
-              Convenience targets for running the generator
-
-       make-man.txt
-              Documentation for makefile targets
-
-       src/man.txt
-              This manual page
-
-TYPO GENERATION SYSTEM
-       The typo generation system simulates realistic typing errors that humans make.
-       Each typo type represents a different kind of mistake:
-
-       Character-level typos:
-              - Insertions add extra characters (let-ins, digit-ins, char-ins, kb-ins, kb-ins-as)
-              - Substitutions replace characters (let-sub, digit-sub, char-sub, kb-sub, kb-sub-as)
-              - Deletions remove characters (del)
-              - Transpositions swap adjacent characters (trans)
-              - Case changes alter capitalization (case)
-
-       Keyboard-proximity typos:
-              - kb-ins, kb-sub: Use the physical keyboard layout to insert/substitute nearby keys
-              - kb-ins-as, kb-sub-as: Account for shift key state when choosing nearby keys
-
-       Word-level typos:
-              - word-dup: Repeats words (e.g., "the the cat")
-              - dbl-miss: Misses doubled letters (e.g., "book" -> "bok")
-              - dbl-ins: Adds extra doubled letters (e.g., "book" -> "boook")
-              - filler-ins: Inserts filler words like "um", "uh", "like"
-              - homophone: Replaces words with sound-alike alternatives (e.g., "their" -> "there")
-
-       Typo Distribution:
-              By default, all typo types have equal probability. Use --typo-weights to
-              adjust the likelihood of each type. For example, to make keyboard substitution
-              errors 3 times more likely than transpositions:
-              --typos kb-sub trans --typo-weights 3 1
-
-       Typo Rate:
-              The --typo-rate parameter controls what percentage of words receive typos.
-              A rate of 0.1 means roughly 10% of words will have typos applied.
-              A rate of 0.5 means roughly 50% of words will have typos applied.
-
-       Typos Per Word:
-              When a word is selected for typo application, --typos-per-word controls
-              the maximum number of typos that can be applied to that single word.
-              The actual number is randomly chosen between 1 and this maximum.
-
-COLOR GENERATION SYSTEM
-       The color generation system creates random colors with multiple representations
-       and human-readable names. Each generated color includes:
-
-       Color Formats:
-              - RGB (Red, Green, Blue): Values from 0-255 for each channel
-              - Hexadecimal: Six-digit hex code (e.g., #FF5733)
-              - HSL (Hue, Saturation, Lightness): Alternative color representation
-                useful for design work
-
-       Color Naming:
-              The system finds the nearest
-              matching color name by calculating the Euclidean distance in RGB
-              color space.
-
-              The color database is recommended to originate from the Color Namer project
-              (https://github.com/robertcoopercode/color-namer) and can be
-              obtained by querying https://api.color.pizza/v1/?list=default
-
-              Due to the large size of the color database files, they are not
-              included in the repository. It will be fetched automatically if
-              "assets/colors-dirty.json" is not present when cleaning colors.
-
-              This means you can create your own color database file if desired, as long as it follows
-              the format:
-
-              {
-                     "colors": [
-                            {
-                                   "name": "Color Name",
-                                   "rgb": {"r": 255, "g": 0, "b": 0}
-                            },
-                            ...
-                     ]
-              }
-              
-              The tool will extract the "name" and "rgb" fields from each entry for its internal use.
-
-       RGB Constraints:
-              You can constrain the random color generation by specifying minimum
-              and maximum values for each RGB channel, or exact values to fix
-              specific channels while randomizing others. This is useful for:
-              - Generating colors within a specific palette
-              - Creating variations of a base color
-              - Ensuring colors meet specific brightness or saturation requirements
-
-       Example Use Cases:
-              - Generate shades of red: --min-r 200 --max-r 255 --max-g 100 --max-b 100
-              - Generate grayscale colors: Use equal min/max values for all channels
-              - Generate pastel colors: Use --min-r 200 --min-g 200 --min-b 200
-              - Fix one channel: --exact-r 255 (red at maximum, green/blue random)
-
-NAME GENERATION SYSTEM
-       The name generation system uses the Faker library with additional providers
-       to generate realistic names across many categories. A shared Faker instance
-       (configured for the en_US locale) is used with the following providers:
-       company, file, internet, person, job, faker-music, and faker-vehicle.
-
-       Name Types:
-
-       Simple types (no additional arguments):
-              - company: Generates a company name
-              - vehicle: Generates a vehicle year/make/model string
-
-       Person names:
-              Generated as "FIRST_NAME LAST_NAME". Both the first and last name
-              can be specified via --first-name, --last-name, or --full-name.
-              If not provided, they are randomly generated based on --gender.
-              Gender can be "male", "female", or "nb" (non-binary). If no gender
-              is specified, one is randomly chosen from all three options.
-
-       Job titles:
-              Respects the --gender argument. If gender is "nb" or not specified,
-              a random binary gender (male/female) is chosen internally since the
-              Faker library supports gendered job titles.
-
-       File names:
-              Can be constrained by --file-category (audio, image, office, text,
-              video) or --file-type (a specific extension). If --file-type is
-              provided, it overrides --file-category. If neither is specified,
-              a random category is chosen.
-
-       Website domain names:
-              The --subdomains argument controls how many subdomains are included
-              in the generated domain name. Default is 1.
-
-       Music genres:
-              Uses the faker-music library. The --parent-music-genre argument
-              constrains generation to subgenres of the specified parent genre.
-              If not specified, a random parent genre is chosen and a random
-              subgenre from it is returned.
-
-       Musical instruments:
-              Uses the faker-music library. The --music-instrument-category
-              argument constrains generation to instruments in the specified
-              category. If not specified, a random category is chosen and a
-              random instrument from it is returned.
-
-IDENTIFIER GENERATION SYSTEM
-       The identifier generation system creates realistic email addresses and
-       usernames derived from name components.
-
-       Email addresses:
-              An email is composed of a username portion and a domain portion.
-              If --user-name is provided, it is used directly; otherwise a
-              username is generated (see Usernames below).  If --domain is
-              provided it is used as-is; otherwise a domain is generated
-              based on --domain-type:
-                personal - A well-known free email provider (e.g., gmail.com)
-                business - A randomly generated company domain name
-
-              --first-name, --last-name, and --gender are forwarded to
-              username generation when --user-name is not provided.
-
-       Usernames:
-              A username is built from a randomly selected scheme that
-              combines parts of the first and last name with optional
-              numeric suffixes.  Example schemes produce usernames such as:
-                alice_smith, AliceS, aSmith42, ALICES, alicesmith7
-
-              If --first-name or --last-name is not provided, a random name
-              is generated based on --gender.  The optional numeric suffix
-              is drawn from the range [--min, --max] (defaults 0–100) and
-              may or may not appear depending on the selected scheme.
-
-EXIT STATUS
-       0      Success
-
-       1      Error occurred:
-              - Invalid type specified (not 'ssn', 'phone', 'address', 'typos', 'color', 'name', 'number', or 'identifier')
-              - Invalid name type specified (not a valid name type)
-              - Invalid count (not a positive integer)
-              - Invalid text format (contains non-keyboard characters for typos)
-              - Invalid RGB value (not an integer between 0 and 255 for colors)
-              - No "assets/colors.json" file found when generating colors
-              - Minimum value greater than maximum value for number generation
-              - Invalid precision value (negative integer) for number generation
-
-NOTES
-       Required Usage:
-              ALWAYS use the makefile targets (make gen-ssn, make gen-ssns,
-              make gen-phone, make gen-phones, make gen-typos, make gen-typos-multi,
-              make gen-color, make gen-colors, make gen-name, make gen-names,
-              make gen-number, make gen-numbers, make gen-from-file, make start).
-              For identifier generation use make start ARGS="identifier ...".
-              Direct invocation of the Python script is NOT supported.
-
-              Consequences of direct invocation:
-                - Script will crash if src/outputs/main/YYYY/MM/DD/ doesn't exist
-                - Script will use wrong directory if old outputs exist
-                - No log file will be created, output lost forever
-                - The get_latest_outputs_dir() function in utils/output.py expects the
-                  makefile to have already created the timestamped directory
-
-              The script's design assumes the makefile has run first to create
-              the proper directory structure. This is intentional - the makefile
-              is not optional tooling, it is a required part of the execution
-              environment.
-
-       Randomness:
-              The tool uses Python's random module and the Faker library for
-              random generation. For cryptographically secure random numbers,
-              the implementation would need modification.
-
-              Seed Behavior:
-              - If --seed is provided: Uses that exact seed value
-              - If --seed is not provided: Automatically generates a random seed
-                using os.urandom() and displays it in the output
-              - Either way, the seed is displayed so results can be reproduced
-
-              Use the --seed option to make output deterministic and reproducible.
-              The same seed value will always produce the same sequence of outputs.
-              Even when not providing a seed explicitly, the auto-generated seed
-              is shown in the output, allowing you to reproduce the same results
-              later by copying that seed value.
-
-              Seed Behavior in file/template mode (-f):
-              - Each interpolation token is executed independently; seeding
-                happens per-token.
-              - A --seed embedded inside a token's args seeds only that
-                token's generation call.
-              - If a token does not specify --seed, it inherits the --seed
-                value from the outer command line (if one was provided),
-                offset by a deterministic per-identifier value computed via
-                zlib.crc32.  This ensures each unique id gets a distinct
-                but fully reproducible seed across runs.
-              - If no outer --seed is provided, a single random seed is
-                auto-generated for the outer invocation; all tokens without
-                their own --seed then inherit that shared seed (each offset
-                by its own zlib.crc32-derived value per identifier).
-
-       Validation:
-              Values are automatically clamped to valid ranges. For example,
-              SSN start values >999 are clamped to 999.
-
-       Real vs. Fake:
-              By default, the tool generates values that are guaranteed
-              or highly likely to be invalid/fictional. Override
-              components at your own risk and heed the warnings.
-
-              Exception: Job titles, music genres, music instruments, and
-              vehicles are sourced from real-world databases within their
-              respective Faker providers, so they will correspond to real
-              entries. This is inherent to how these libraries work.
-
-              Additionally, color generation is guaranteed to produce
-              real colors, though they may not correspond directly to the
-              color name provided in the database since it finds the nearest match.
-
-       Dependencies:
-              The makefile uses 'uv' for Python environment management. Install
-              it with 'make uv-install' if not already available. 'uv' itself
-              handles all Python dependencies via the 'pyproject.toml' file.
+    make start ARGS="ssn 3"
+    make start ARGS="phone 1 -c 555 555 0100"
+    make start ARGS="name 1 --name-type vehicle"
+    make start ARGS="-f template.txt 5 -s 42"
+
+    template.txt:
+        {{id: number 1 -mn 10000 -mx 99999}},
+        {{n: name 1}},
+        {{e: identifier 1 -idt email -dt personal -fln "$(n)"}}
 
 SEE ALSO
-       make-man.txt - Documentation for makefile targets
-       README.md - Project overview and setup instructions
-
-INFO-GEN                         May 2026                     INFO-GEN(1)
+    make make-help        documentation for make targets
+    make help             full argparse reference

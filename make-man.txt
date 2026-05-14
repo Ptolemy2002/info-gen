@@ -1,5 +1,5 @@
 This makefile provides targets for managing the Information Generator project,
-a uv-based Python tool for generating fake SSNs, phone numbers, and addresses for testing.
+a uv-based Python tool for generating fake information for testing.
 
 Available Targets:
 ------------------
