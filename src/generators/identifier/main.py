@@ -1,7 +1,7 @@
 from fake import get_fake
 from generators import gen_name, NameArgs, gen_number
 from typing import cast
-from utils import to_casing, CASING_TYPES
+from utils import to_casing, CASING_TYPES, value_or_default
 import random
 from .pytypes import IdentifierArgs
 from .vars import USER_NAME_SCHEMES
@@ -55,8 +55,8 @@ def gen_identifier(type: str, args: IdentifierArgs, log: bool = False) -> str:
             scheme = random.choice(USER_NAME_SCHEMES)
             if log: print(f"Selected username scheme: '{scheme}'")
 
-            first_name = args.get("first_name", "")
-            last_name = args.get("last_name", "")
+            first_name = value_or_default(args, "first_name", "")
+            last_name = value_or_default(args, "last_name", "")
             result = scheme
 
             result = result.replace("{{first_name}}", to_casing([first_name], random.choice(CASING_TYPES)))
@@ -68,8 +68,8 @@ def gen_identifier(type: str, args: IdentifierArgs, log: bool = False) -> str:
             result = result.replace("{{name_if}}", to_casing([first_name[0], last_name], random.choice(CASING_TYPES)))
 
             if "{{num}}" in result or "{{num?}}" in result:
-                min = int(args.get("min", 0))
-                max = int(args.get("max", 9999))
+                min = int(value_or_default(args, "min", 0))
+                max = int(value_or_default(args, "max", 9999))
                 num = gen_number(min, max, precision=0, log=False)
                 
                 result = result.replace("{{num}}", str(num).zfill(len(str(max))))

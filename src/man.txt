@@ -19,7 +19,7 @@ DESCRIPTION
     a real entity.
 
 POSITIONAL ARGUMENTS
-    type    ssn | phone | address | typos | color | name | number | identifier
+    type    ssn | phone | address | typos | color | name | number | identifier | date
             (default: ssn)
     count   positive integer (default: 1)
 
@@ -92,6 +92,24 @@ GENERATOR TYPES
                   --min/--max bound the optional trailing number
                   (defaults 0/100).
 
+    date       --after / -af DT, --before / -bf DT
+                               inclusive date-time bounds; parsed with
+                               --input-format (default '%Y-%m-%d %H:%M:%S')
+               --output-format / -odf FMT
+                               strftime format for output
+                               (default '%Y-%m-%d %I:%M:%S %p')
+               --min-year N / --max-year N / --exact-year N
+               --min-month M / --max-month M / --exact-month M  (name or 1–12)
+               --min-day N   / --max-day N   / --exact-day N
+               --min-hour N  / --max-hour N  / --exact-hour N   (0–23)
+               --min-minute N / --max-minute N / --exact-minute N (0–59)
+               --min-second N / --max-second N / --exact-second N (0–59)
+               Short flags follow -mn*/-mx*/-ex* patterns (see --help).
+               --season / -sn {spring|summer|autumn|fall|winter|1–4}
+               --exact-* overrides --min-*/--max-*. Defaults: year
+               1970–2100; all other fields span their full range.
+               Leap years and month lengths are handled automatically.
+
     typos      -t TEXT         source text; only keyboard chars +
                                space allowed
                                (default: "Example text for typo
@@ -144,7 +162,7 @@ DATA REALISM
         ssn  (default components)
         phone (default components)
         address (streets are fake; cities/states/ZIPs are real if you don't override them)
-        number, typos
+        number, typos, date
         name=company, name=person, name=file_name, name=website
         identifier  (username and email local-part are synthesized)
 

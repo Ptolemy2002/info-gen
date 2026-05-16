@@ -149,6 +149,15 @@ gen-identifier
     make gen-identifier
     make gen-identifier ARGS="additional options"
 
+gen-date
+  Description: Generates a single date value
+  Usage: make gen-date [ARGS="arguments"]
+  Details: Convenience target that calls main.py to generate 1 date value
+           Additional arguments can be specified for date generation
+  Examples:
+    make gen-date
+    make gen-date ARGS="additional options"
+
 gen-ssns
   Description: Generates multiple SSNs
   Usage: make gen-ssns ARGS="count [component values]"
@@ -220,6 +229,15 @@ gen-identifiers
   Examples:
     make gen-identifiers ARGS="10"
     make gen-identifiers ARGS="5 additional options"
+
+gen-dates
+  Description: Generates multiple date values
+  Usage: make gen-dates ARGS="count [arguments]"
+  Details: Convenience target that calls main.py to generate multiple date values
+           First argument is the count, followed by optional arguments for date generation
+  Examples:
+    make gen-dates ARGS="10"
+    make gen-dates ARGS="5 additional options"
 
 gen-from-file
   Description: Processes a template file containing interpolation tokens

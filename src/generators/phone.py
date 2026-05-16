@@ -1,6 +1,7 @@
 import random
 from warnings import warn
-from utils import clamp, randint_from_input, format_component
+from utils import clamp, randint_from_input, format_component, arg_parser_has_arg
+from argparse import ArgumentParser
 
 AREA_CODE_MIN = 200
 AREA_CODE_MAX = 999
@@ -92,3 +93,15 @@ def gen_phone(area: int | str | None = None, central: int | str | None = None, l
     line_str = str(line).zfill(4)
 
     return f"({area_str}) {central_str}-{line_str}"
+
+def add_args_phone(parser: ArgumentParser) -> ArgumentParser:
+    if not arg_parser_has_arg(parser, "--components"):
+        parser.add_argument(
+            '--components', '-c',
+            nargs='*',
+            help=
+                "Optional components with patterns for SSN/phone. Use digits for fixed values, non-digits (like 'x') " \
+                "for random digits. Separate with spaces or dashes."
+        )
+    
+    return parser

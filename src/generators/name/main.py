@@ -1,4 +1,5 @@
 import random
+from utils import value_or_default
 from fake import get_fake
 from faker_music.genres import genre_list
 from faker_music.instruments import instrument_list
@@ -34,11 +35,11 @@ def gen_name(type: str, args: NameArgs, log: bool = False) -> str:
 
             return fake.file_name(category=category)
         case "website":
-            subdomains = args.get("subdomains", 0)
+            subdomains = value_or_default(args, "subdomains", 0)
             if log: print(f"Generating a website with {subdomains} subdomains.")
             return fake.domain_name(subdomains)
         case "job":
-            gender = args.get("gender", "nb")
+            gender = value_or_default(args, "gender", "nb")
 
             if gender == "nb":
                 if log: print("No specified gender. Generating a random job title with a random gender.")
