@@ -158,6 +158,15 @@ gen-date
     make gen-date
     make gen-date ARGS="additional options"
 
+gen-date-adjust
+  Description: Generates a date value adjusted by a specified amount
+  Usage: make gen-date-adjust [ARGS="arguments"]
+  Details: Convenience target that calls main.py to generate a date value adjusted by the specified amount.
+
+  Examples:
+    make gen-date-adjust ARGS="--date 2025-05-15 --duration 7d"
+    make gen-date-adjust ARGS="--date 2025-05-15 --duration -2w"
+
 gen-ssns
   Description: Generates multiple SSNs
   Usage: make gen-ssns ARGS="count [component values]"
@@ -238,6 +247,16 @@ gen-dates
   Examples:
     make gen-dates ARGS="10"
     make gen-dates ARGS="5 additional options"
+
+gen-date-adjusts
+  Description: Generates multiple date values adjusted by a specified amount
+  Usage: make gen-date-adjusts ARGS="count [arguments]"
+  Details: Convenience target that calls main.py to generate multiple date values adjusted by the specified amount.
+           First argument is the count, followed by optional arguments for date adjustment.
+
+  Examples:
+    make gen-date-adjusts ARGS="10 --date 2025-05-15 --duration 7d"
+    make gen-date-adjusts ARGS="5 --date 2025-05-15 --duration -2w"
 
 gen-from-file
   Description: Processes a template file containing interpolation tokens

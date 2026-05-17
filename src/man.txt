@@ -19,7 +19,7 @@ DESCRIPTION
     a real entity.
 
 POSITIONAL ARGUMENTS
-    type    ssn | phone | address | typos | color | name | number | identifier | date
+    type    ssn | phone | address | typos | color | name | number | identifier | date | date-adjust
             (default: ssn)
     count   positive integer (default: 1)
 
@@ -101,7 +101,7 @@ GENERATOR TYPES
                --min-year N / --max-year N / --exact-year N
                --min-month M / --max-month M / --exact-month M  (name or 1–12)
                --min-day N   / --max-day N   / --exact-day N
-               --min-hour N  / --max-hour N  / --exact-hour N   (0–23)
+               --min-hour N  / --max-hour N  / --exact-hour N   (0–23 or 1–12am/pm)
                --min-minute N / --max-minute N / --exact-minute N (0–59)
                --min-second N / --max-second N / --exact-second N (0–59)
                Short flags follow -mn*/-mx*/-ex* patterns (see --help).
@@ -109,6 +109,47 @@ GENERATOR TYPES
                --exact-* overrides --min-*/--max-*. Defaults: year
                1970–2100; all other fields span their full range.
                Leap years and month lengths are handled automatically.
+
+    date-adjust
+               Unlike all other types, date-adjust is deterministic —
+               it applies an exact offset to a base date with no RNG.
+               It is primarily meant for file-mode templates that use
+               result-references ($(id)) to derive one date from another.
+
+               --date / -dte DT         base datetime (required); parsed
+                                        with --input-format
+               --duration / -dur DUR    offset to apply (default: "0s")
+                                        Format: one or more ±N UNIT tokens,
+                                        e.g. "+1y-2mo+3d" or "1year 6months".
+                                        Supported units (aliases accepted):
+                                          s / sec / second(s)
+                                          m / min / minute(s)
+                                          h / hr / hour(s)
+                                          d / day(s)
+                                          w / wk / week(s)
+                                          mo / mon / month(s)
+                                          y / yr / year(s)
+                                          wd / wday / weekday(s)  (Mon–Fri only)
+                                        Units are applied in order:
+                                        s → m → h → d → wd → w → mo → y.
+               --holidays / -hol M/D [M/D ...]
+                                        Dates to skip (format "Month/Day",
+                                        e.g. "12/25"). If the result falls on
+                                        a holiday it is shifted one day in the
+                                        direction of the overall adjustment
+                                        (forward if the net change is zero).
+               --skip-weekends / -sw    Shift Sat/Sun results to the next
+                                        weekday (combines with --holidays).
+               --month-length / -ml N   Treat each month as N days instead
+                                        of using calendar months. Avoids
+                                        day-overflow/clamp when the target
+                                        month is shorter than the source day
+                                        (e.g. +1mo from Mar 31).
+               Shares --input-format and --output-format with date.
+               Month arithmetic (without --month-length): adding months
+               spills overflow days into the next month; subtracting clamps
+               to the last day of the target month. Adding years maps
+               Feb 29 → Mar 1 in non-leap target years.
 
     typos      -t TEXT         source text; only keyboard chars +
                                space allowed
@@ -162,7 +203,7 @@ DATA REALISM
         ssn  (default components)
         phone (default components)
         address (streets are fake; cities/states/ZIPs are real if you don't override them)
-        number, typos, date
+        number, typos, date, date-adjust
         name=company, name=person, name=file_name, name=website
         identifier  (username and email local-part are synthesized)
 

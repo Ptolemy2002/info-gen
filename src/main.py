@@ -9,10 +9,13 @@ import utils.output as output_utils
 from typing import cast
 from utils import clean_dirty_colors
 from generators import gen_ssn, gen_phone, gen_name, gen_address, gen_typos, gen_color, gen_number, gen_identifier, gen_date, \
-                       AddressArgs, TypoArgs, ColorArgs, NameArgs, IdentifierArgs, DateArgs, TYPO_GENERATORS, \
+                       gen_date_adjust, \
+                       AddressArgs, TypoArgs, ColorArgs, NameArgs, IdentifierArgs, DateArgs, DateAdjustArgs, TYPO_GENERATORS, \
                        add_args_number, add_args_phone, add_args_ssn, add_args_address, add_args_typos, add_args_color, \
-                       add_args_name, add_args_identifier, add_args_date
-from pytypes import *
+                       add_args_name, add_args_identifier, add_args_date, add_args_date_adjust, \
+                       post_process_args_date_adjust, post_process_args_name, post_process_args_identifier, \
+                       post_process_args_color
+from global_pytypes import *
 from file_parse import (extract_interpolations, unique_interpolation_map,
                         resolve_interpolation_args, apply_interpolations)
 import zlib
@@ -43,6 +46,7 @@ def main(
         max_val: float = 100,
         precision: int = 0,
         date_args: DateArgs = cast(DateArgs, {}),
+        date_adjust_args: DateAdjustArgs = cast(DateAdjustArgs, {}),
     ) -> list[str]:
     if components is None:
         components = []
@@ -99,6 +103,10 @@ def main(
         for _ in range(count):
             results.append(gen_date(date_args, log=True))
 
+    if val_type == "date-adjust":
+        for _ in range(count):
+            results.append(gen_date_adjust(date_adjust_args, log=True))
+
     print("------- Output -------")
     for result in results:
         print(result)
@@ -153,10 +161,11 @@ def parse_args(og_args: list[str]) -> Namespace:
     parser = add_args_name(parser)
     parser = add_args_identifier(parser)
     parser = add_args_date(parser)
+    parser = add_args_date_adjust(parser)
 
     parser.add_argument(
         'type',
-        choices=['ssn', 'phone', 'address', 'typos', 'color', 'name', 'number', 'identifier', 'date'],
+        choices=['ssn', 'phone', 'address', 'typos', 'color', 'name', 'number', 'identifier', 'date', 'date-adjust'],
         default='ssn',
         nargs='?',
         help="Type of information to generate (default: ssn)"
@@ -212,18 +221,11 @@ def parse_args(og_args: list[str]) -> Namespace:
         print(output_utils.get_manual())
         exit(0)
 
-    if args.full_name:
-        if args.first_name or args.last_name:
-            warn("Full name provided; overriding first name and last name arguments.")
-        split = args.full_name.split()
-        args.first_name = split[0]
-        args.last_name = split[-1]
-
-    if args.type == 'color':
-        warn("Color generation will pick random values, but all will correspond to an actual color.")
-
-    if args.type == 'name' and args.name_type in ['job', 'music_genre', 'music_instrument', 'vehicle']:
-        warn(f"{args.name_type} generation will pick random values, but all will correspond to real entries in the Faker database for that category.")
+    # Post-processing and warning messages
+    args = post_process_args_name(args)
+    args = post_process_args_identifier(args)
+    args = post_process_args_color(args)
+    args = post_process_args_date_adjust(args)
 
     return args
 
@@ -326,13 +328,23 @@ def main_exec(args: Namespace) -> list[str]:
         'exact_second': args.exact_second,
     }
 
+    date_adjust_args: DateAdjustArgs = {
+        'input_format': args.input_format,
+        'output_format': args.output_format,
+        'date': args.date,
+        'duration': args.duration,
+        'holidays': args.holidays,
+        'skip_weekends': args.skip_weekends,
+        'month_length': args.month_length
+    }
+
     return main(
         args.type, args.count, components, address_args,
         not args.no_state_abbr, not args.no_existing_city,
         typo_args, color_args, name_args=name_args, name_type=args.name_type,
         identifier_args=identifier_args, identifier_type=args.identifier_type,
         min_val=args.min, max_val=args.max, precision=args.precision,
-        date_args=date_args
+        date_args=date_args, date_adjust_args=date_adjust_args
     )
 
 def _topo_sort_interpolations(interp_map: dict) -> list[str]:

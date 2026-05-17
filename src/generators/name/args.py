@@ -1,6 +1,7 @@
+from warnings import warn
 from utils import arg_parser_has_arg
-from pytypes import case_insensitive_choice_argtype, full_name_argtype, subdomain_count_argtype
-from argparse import ArgumentParser
+from global_pytypes import case_insensitive_choice_argtype, full_name_argtype, subdomain_count_argtype
+from argparse import ArgumentParser, Namespace
 from .vars import FILE_CATEGORIES, INSTRUMENT_CATEGORIES, MUSIC_GENRES, NAME_TYPES
 
 def add_args_name(parser: ArgumentParser) -> ArgumentParser:
@@ -55,3 +56,16 @@ def add_args_name(parser: ArgumentParser) -> ArgumentParser:
     )
 
     return parser
+
+def post_process_args_name(args: Namespace) -> Namespace:
+    # If full name is provided, split it into first and last name components
+    if args.type == 'name':
+        if args.name_type in ['job', 'music_genre', 'music_instrument', 'vehicle']:
+            warn(f"{args.name_type} generation will pick random values, but all will correspond to real entries in the Faker database for that category.")
+
+        if args.full_name:
+            first_name, last_name = args.full_name.split()
+            args.first_name = first_name
+            args.last_name = last_name
+
+    return args

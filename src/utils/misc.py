@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Callable
 from argparse import ArgumentParser
 
 def value_or_default(args: Any, key: Any, default: Any) -> Any:
@@ -12,3 +12,14 @@ def arg_parser_has_arg(parser: ArgumentParser, arg: str) -> bool:
         if arg in action.option_strings:
             return True
     return False
+
+def do_while(f: Callable[[], bool]) -> Callable[[], None]:
+    """
+        Annotation to turn a boolean function into a do-while loop.
+        The function will be called at least once, and will continue to be called until it returns False.
+    """
+    def inner():
+        while f():
+            pass
+
+    return inner

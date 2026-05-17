@@ -1,6 +1,5 @@
-from .pytypes import month_argtype, season_argtype
+from .pytypes import month_argtype, season_argtype, hour_argtype
 from argparse import ArgumentParser
-
 
 def add_args_date(parser: ArgumentParser) -> ArgumentParser:
     parser.add_argument('--input-format', '-idf', default='%Y-%m-%d %H:%M:%S',
@@ -31,12 +30,12 @@ def add_args_date(parser: ArgumentParser) -> ArgumentParser:
                         default=None, help="Maximum day of month")
     parser.add_argument('--exact-day', '-exd', type=int,
                         default=None, help="Exact day of month")
-    parser.add_argument('--min-hour', '-mnh', type=int,
-                        default=None, help="Minimum hour (0–23)")
-    parser.add_argument('--max-hour', '-mxh', type=int,
-                        default=None, help="Maximum hour (0–23)")
-    parser.add_argument('--exact-hour', '-exh', type=int,
-                        default=None, help="Exact hour (0–23)")
+    parser.add_argument('--min-hour', '-mnh', type=hour_argtype,
+                        default=None, help="Minimum hour (0–23 or 1–12am/pm)")
+    parser.add_argument('--max-hour', '-mxh', type=hour_argtype,
+                        default=None, help="Maximum hour (0–23 or 1–12am/pm)")
+    parser.add_argument('--exact-hour', '-exh', type=hour_argtype,
+                        default=None, help="Exact hour (0–23 or 1–12am/pm)")
     parser.add_argument('--min-minute', '-mnmi', type=int,
                         default=None, help="Minimum minute (0–59)")
     parser.add_argument('--max-minute', '-mxmi', type=int,

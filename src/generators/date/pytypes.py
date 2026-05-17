@@ -125,6 +125,20 @@ def normalize_month_str(month: Month) -> StrMonth:
     return month
 
 
+def loop_month_int(month: Month, year: int, delta: int) -> tuple[int, int]:
+    month_int = normalize_month_int(month) - 1 + delta
+    year += month_int // 12
+    month_int = month_int % 12 + 1
+    return month_int, year
+
+def loop_month_str(month: Month, year: int, delta: int) -> tuple[StrMonth, int]:
+    month_int, year = loop_month_int(month, year, delta)
+    month_str = normalize_month_str(month_int)
+    return month_str, year
+
+def len_month(year: int, month: int) -> int:
+    return monthrange(year, month)[1]
+
 def month_argtype(s: str) -> int | str:
     lower = s.lower()
     if lower in MONTH_MAP:
@@ -149,3 +163,44 @@ def season_argtype(s: str) -> int | str:
         raise argparse.ArgumentTypeError("Season integer must be between 1 and 4 (1=spring, 2=summer, 3=autumn, 4=winter).")
     except ValueError:
         raise argparse.ArgumentTypeError("Season must be a name (spring/summer/autumn/fall/winter) or integer 1–4.")
+    
+def hour_argtype(s: str) -> int:
+    s = s.lower()
+    is_am = s.endswith('am')
+    is_pm = s.endswith('pm')
+
+    # Ranges are not included in this validation because values should be normalized later
+    try:
+        if is_am or is_pm:
+            value = int(s[:-2])
+            if is_am:
+                if value == 12:
+                    return 0
+                else: return value
+            else:  # is_pm
+                if value == 12:
+                    return 12
+                else: return value + 12
+        else:
+            return int(s)
+    except ValueError:
+        raise argparse.ArgumentTypeError("Value must be an integer optionally followed by 'am' or 'pm' (e.g., '3pm', '11am').")
+
+def int_month_day_pair_argtype(s: str) -> IntMonthDayPair:
+    parts = s.split("/")
+    if len(parts) != 2:
+        raise argparse.ArgumentTypeError("Value must be in the format 'Month/Day' (e.g., '1/15').")
+    
+    month_part, day_part = parts
+    
+    try:
+        month = normalize_month_int(int(month_part))
+    except ValueError:
+        raise argparse.ArgumentTypeError("Month part must be an integer.")
+    
+    try:
+        day = int(day_part)
+    except ValueError:
+        raise argparse.ArgumentTypeError("Day part must be an integer.")
+
+    return month, day

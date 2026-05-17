@@ -1,5 +1,6 @@
-from pytypes import rgb_bound_argtype
-from argparse import ArgumentParser
+from global_pytypes import rgb_bound_argtype
+from argparse import ArgumentParser, Namespace
+from warnings import warn
 
 def add_args_color(parser: ArgumentParser) -> ArgumentParser:
     parser.add_argument('--min-r', '-mnr', type=rgb_bound_argtype, default=0, help="Minimum red value for color generation (0-255, default: 0)")
@@ -12,3 +13,9 @@ def add_args_color(parser: ArgumentParser) -> ArgumentParser:
     parser.add_argument('--max-b', '-mxb', type=rgb_bound_argtype, default=255, help="Maximum blue value for color generation (0-255, default: 255)")
     parser.add_argument('--exact-b', '-b', type=rgb_bound_argtype, default=None, help="Exact blue value for color generation (0-255). If specified, overrides min and max blue values.")
     return parser
+
+def post_process_args_color(args: Namespace) -> Namespace:
+    if args.type == 'color':
+        warn("Color generation will pick random values, but all will correspond to an actual color.")
+        
+    return args

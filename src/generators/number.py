@@ -1,7 +1,7 @@
 import random
 from argparse import ArgumentParser
 from utils import arg_parser_has_arg
-from pytypes import number_precision_argtype
+from global_pytypes import number_precision_argtype
 
 def gen_number(min: float, max: float, precision: int = 0, log: bool = False) -> str:
     """

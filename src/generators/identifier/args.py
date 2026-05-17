@@ -1,6 +1,6 @@
-from pytypes import full_name_argtype
+from global_pytypes import full_name_argtype
 from utils import arg_parser_has_arg
-from argparse import ArgumentParser
+from argparse import ArgumentParser, Namespace
 from .vars import IDENTIFIER_TYPES
 
 def add_args_identifier(parser: ArgumentParser) -> ArgumentParser:
@@ -33,3 +33,12 @@ def add_args_identifier(parser: ArgumentParser) -> ArgumentParser:
                         help="Type of domain to use for email generation if domain is not specified (default: random)")
 
     return parser
+
+def post_process_args_identifier(args: Namespace) -> Namespace:
+    # If full name is provided, split it into first and last name components
+    if args.type == 'identifier' and args.full_name:
+        first_name, last_name = args.full_name.split()
+        args.first_name = first_name
+        args.last_name = last_name
+
+    return args

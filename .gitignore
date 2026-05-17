@@ -24,3 +24,6 @@ outputs
 
 # A template file, not meant to be tracked
 **/assets/template.txt
+
+# A holidays file, configured by the user, not meant to be tracked
+**/assets/holidays.txt

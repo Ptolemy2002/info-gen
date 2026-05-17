@@ -1,4 +1,4 @@
-from pytypes import text_regex_argtype, typo_weights_argtype
+from global_pytypes import text_regex_argtype, typo_weights_argtype
 from argparse import ArgumentParser
 from .main import TYPO_GENERATORS
 
