@@ -19,6 +19,7 @@ Generate personal information with either a guarantee or reasonable expectation 
 * `scipy` - for determining color distances
 * `faker-music` - for generating fake music genres and instruments.
 * `faker-vehicle` - for generating fake vehicle information.
+* `skyfield` - for calculating season bounds based on astronomical data.
 
 **Linux Dependencies:**
 * `colorized-logs` - for removing ANSI color codes from log files.

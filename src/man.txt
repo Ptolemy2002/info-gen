@@ -106,6 +106,14 @@ GENERATOR TYPES
                --min-second N / --max-second N / --exact-second N (0–59)
                Short flags follow -mn*/-mx*/-ex* patterns (see --help).
                --season / -sn {spring|summer|autumn|fall|winter|1–4}
+               --astronomical-season-bounds / -asb
+                               Use astronomical season bounds (actual
+                               solstices/equinoxes for the resolved year)
+                               instead of the fixed meteorological bounds.
+                               Requires the de421.bsp ephemeris file in the
+                               project root; timezone is inferred from the
+                               --before/--after constraints, falling back to
+                               the system local timezone.
                --exact-* overrides --min-*/--max-*. Defaults: year
                1970–2100; all other fields span their full range.
                Leap years and month lengths are handled automatically.

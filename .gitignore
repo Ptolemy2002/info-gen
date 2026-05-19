@@ -27,3 +27,6 @@ outputs
 
 # A holidays file, configured by the user, not meant to be tracked
 **/assets/holidays.txt
+
+# A skyfield file
+de421.bsp

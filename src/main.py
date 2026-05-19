@@ -326,6 +326,7 @@ def main_exec(args: Namespace) -> list[str]:
         'min_second': args.min_second,
         'max_second': args.max_second,
         'exact_second': args.exact_second,
+        'astronomical_season_bounds': args.astronomical_season_bounds
     }
 
     date_adjust_args: DateAdjustArgs = {

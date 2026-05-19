@@ -48,4 +48,11 @@ def add_args_date(parser: ArgumentParser) -> ArgumentParser:
                         default=None, help="Maximum second (0–59)")
     parser.add_argument('--exact-second', '-exsc', type=int,
                         default=None, help="Exact second (0–59)")
+    
+    parser.add_argument('--astronomical-season-bounds', '-asb', action='store_true',
+                        help=
+                            "If set, use astronomical season bounds, which are calculated based on the actual solstices and equinoxes for the given year," \
+                            " instead of the fixed meteorological season bounds."
+                        )
+    
     return parser

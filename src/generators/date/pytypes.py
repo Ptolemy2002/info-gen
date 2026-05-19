@@ -1,7 +1,10 @@
 import argparse
+from skyfield.api import load
+from skyfield import almanac
 from typing import Callable, TypedDict, Literal, NotRequired, cast, Sequence
 from calendar import monthrange
 from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 
 StrSeason = Literal['spring', 'summer', 'autumn', "fall", 'winter']
 Season = StrSeason | int
@@ -55,6 +58,7 @@ class DateArgs(TypedDict):
     before: NotRequired[str | None]
     after: NotRequired[str | None]
     season: NotRequired[Season | None]
+    astronomical_season_bounds: bool
 
     min_month: NotRequired[Month | None]
     min_day: NotRequired[int | None]
@@ -478,3 +482,70 @@ def int_month_day_pair_argtype(s: str) -> IntMonthDayPair | KnownFloatingHoliday
         raise argparse.ArgumentTypeError("Day part must be an integer.")
 
     return month, day
+
+SeasonBoundSet = dict[StrSeason, tuple[StrMonthDayPair, StrMonthDayPair]]
+
+# Meteorological season bounds
+METEOROLOGY_SEASON_BOUNDS: SeasonBoundSet = {
+    "spring": (('march', 1), ('may', 31)),
+    "summer": (('june', 1), ('august', 31)),
+    "autumn": (('september', 1), ('november', 30)),
+    "winter": (('december', 1), ('february', 29))
+}
+
+eph = None
+ts = None
+def calc_season_bounds(year: int, target_tz: str='UTC') -> SeasonBoundSet:
+    global eph, ts
+
+    # 1. Only load the ephemeris and timescale when this function is called for the first time, since they can be reused across calls and are expensive to load.
+    if eph is None or ts is None:
+        eph = load('de421.bsp')
+        ts = load.timescale()
+
+    # 2. Search up to April 1st of the NEXT year to capture the true end of Winter
+    t0 = ts.utc(year, 1, 1)
+    t1 = ts.utc(year + 1, 4, 1) 
+
+    times, season_indices = almanac.find_discrete(t0, t1, almanac.seasons(eph))
+
+    season_names = [SEASON_MAP[index + 1] for index in range(4)]
+    results: SeasonBoundSet = {}
+    
+    # Store localized datetime objects temporarily to make the math precise
+    season_starts = {}
+    next_spring_dt = None
+
+    for time_obj, index in zip(times, season_indices):
+        season_name = season_names[index]
+        dt = time_obj.astimezone(ZoneInfo(target_tz))
+        
+        # Separate the events of the current year from the Spring of the next year
+        if dt.year == year:
+            season_starts[season_name] = dt
+        elif dt.year == year + 1 and season_name == 'spring':
+            next_spring_dt = dt
+
+    # 3. Build the bounds
+    for i in range(4):
+        current_season = cast(StrSeason, season_names[i])
+        start_dt = season_starts[current_season]
+        
+        start_month_str = normalize_month_str(start_dt.month)
+        start_day = start_dt.day
+
+        # Capping off the bounds
+        if current_season == 'winter':
+            # Use the actual Spring of the following year to cap Winter
+            end_dt = cast(datetime, next_spring_dt) - timedelta(days=1)
+        else:
+            # Otherwise, use the start of the next season in the current year
+            next_season = season_names[i + 1]
+            end_dt = season_starts[next_season] - timedelta(days=1)
+
+        end_month_str = normalize_month_str(end_dt.month)
+        end_day = end_dt.day
+
+        results[current_season] = ((start_month_str, start_day), (end_month_str, end_day))
+    
+    return results
