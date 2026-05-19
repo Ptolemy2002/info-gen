@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 from typing import cast
-from generators.date import len_month, loop_month_int, KnownFloatingHoliday, FLOATING_HOLIDAY_MAP, IntMonthDayPair
+from generators.date import len_month, loop_month_int, KnownFloatingHoliday, FLOATING_HOLIDAY_MAP, IntMonthDayPair, which_known_holiday
 from utils import do_while
 from .pytypes import DateAdjustArgs
 
@@ -118,15 +118,6 @@ def gen_date_adjust(args: DateAdjustArgs, log: bool = False) -> str:
     fixed_holidays = [h for h in holidays if isinstance(h, tuple)]
     floating_holidays: list[KnownFloatingHoliday] = [cast(KnownFloatingHoliday, h) for h in holidays if isinstance(h, str)]
 
-    def compute_floating_holiday_dates(year: int) -> list[IntMonthDayPair]:
-        if len(floating_holidays) == 0:
-            return []
-        
-        return [FLOATING_HOLIDAY_MAP[name](year) for name in floating_holidays]
-
-    # Initially compute the dates for the current year. This will be recomputed as necessary if the result_date changes years.
-    floating_holiday_dates = compute_floating_holiday_dates(result_date.year)
-
     skip_weekends = args["skip_weekends"]
 
     overall_direction = -1 if result_date < og_date else 1 if result_date > og_date else 0
@@ -140,24 +131,23 @@ def gen_date_adjust(args: DateAdjustArgs, log: bool = False) -> str:
     def holiday_weekend_adjust() -> bool:
         nonlocal result_date
         nonlocal prev_year
-        nonlocal floating_holiday_dates
-        
-        if result_date.year != prev_year and len(floating_holidays) > 0:
-            # Recompute floating holiday dates for the new year
-            if log: print(f"Year changed from {prev_year} to {result_date.year}, recomputing floating holiday dates")
-            floating_holiday_dates = compute_floating_holiday_dates(result_date.year)
+        nonlocal floating_holidays
 
         prev_year = result_date.year
-        
+
+        current_floating_holiday = which_known_holiday(result_date.month, result_date.day, result_date.year, holiday_set=floating_holidays)
+
         should_skip_weekend = skip_weekends and result_date.weekday() >= 5
         should_skip_fixed_holiday = (result_date.month, result_date.day) in fixed_holidays
-        should_skip_floating_holiday = (result_date.month, result_date.day) in floating_holiday_dates
+        should_skip_floating_holiday = current_floating_holiday is not None
         should_skip = should_skip_weekend or should_skip_fixed_holiday or should_skip_floating_holiday
         
         if log:
             if should_skip_weekend: print(f"Skipping weekend date {'backwards' if overall_direction < 0 else 'forwards'}: {result_date_str_notime()}")
-            elif should_skip_fixed_holiday or should_skip_floating_holiday:
+            elif should_skip_fixed_holiday:
                 print(f"Skipping holiday date {'backwards' if overall_direction < 0 else 'forwards'}: {result_date_str_notime()}")
+            elif should_skip_floating_holiday:
+                print(f"Skipping floating holiday {current_floating_holiday} {'backwards' if overall_direction < 0 else 'forwards'}: {result_date_str_notime()}")
 
         if should_skip:
             result_date += timedelta(days=(overall_direction if overall_direction != 0 else 1))  # If no overall direction, default to forward

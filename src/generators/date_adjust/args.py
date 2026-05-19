@@ -42,7 +42,7 @@ def post_process_args_date_adjust(args: Namespace) -> Namespace:
         if os.path.isfile("src/assets/holidays.txt"):
             warn("No holidays provided for date adjustment, but found `src/assets/holidays.txt`. Using holidays from that file.")
             with open("src/assets/holidays.txt", 'r') as f:
-                holidays = [line.strip() for line in f if line.strip()]
+                holidays = [line.strip() for line in f if line.strip() and not line.startswith('#')]
                 args.holidays = [int_month_day_pair_argtype(holiday) for holiday in holidays]
         else:
             warn("No holidays provided for date adjustment, and `src/assets/holidays.txt` not found. No holidays will be used.")

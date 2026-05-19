@@ -1,5 +1,5 @@
 import argparse
-from typing import Callable, TypedDict, Literal, NotRequired, cast
+from typing import Callable, TypedDict, Literal, NotRequired, cast, Sequence
 from calendar import monthrange
 from datetime import datetime, timedelta
 
@@ -407,17 +407,21 @@ FLOATING_HOLIDAY_MAP: dict[KnownFloatingHoliday, Callable[[int], IntMonthDayPair
 KnownFixedHoliday = Literal[
     'new_years',
     'valentines',
+    'st_patricks',
     'independence',
     'halloween',
-    'christmas'
+    'christmas',
+    'veterans'
 ]
 
 FIXED_HOLIDAY_MAP: dict[KnownFixedHoliday, IntMonthDayPair] = {
     'new_years': (1, 1),
     'valentines': (2, 14),
+    'st_patricks': (3, 17),
     'independence': (7, 4),
     'halloween': (10, 31),
-    'christmas': (12, 25)
+    'christmas': (12, 25),
+    'veterans': (11, 11)
 }
 
 KnownHoliday = KnownFloatingHoliday | KnownFixedHoliday
@@ -430,6 +434,24 @@ def is_known_fixed_holiday(name: str) -> bool:
 
 def is_known_holiday(name: str) -> bool:
     return is_known_floating_holiday(name) or is_known_fixed_holiday(name)
+
+def which_known_holiday(month: Month, day: int, year: int, holiday_set: Sequence[KnownHoliday] | None = None) -> KnownHoliday | None:
+    if holiday_set is None:
+        holiday_set = list(FIXED_HOLIDAY_MAP.keys()) + list(FLOATING_HOLIDAY_MAP.keys())
+
+    month = normalize_month_int(month)
+    day = normalize_day(year, month, day)
+
+    for holiday in holiday_set:
+        if is_known_fixed_holiday(holiday):
+            holiday_month, holiday_day = FIXED_HOLIDAY_MAP[cast(KnownFixedHoliday, holiday)]
+        else:  # is known floating holiday
+            holiday_month, holiday_day = FLOATING_HOLIDAY_MAP[cast(KnownFloatingHoliday, holiday)](year)
+
+        if month == holiday_month and day == holiday_day:
+            return holiday
+
+    return None
 
 def int_month_day_pair_argtype(s: str) -> IntMonthDayPair | KnownFloatingHoliday:
     if is_known_fixed_holiday(s):

@@ -133,11 +133,15 @@ GENERATOR TYPES
                                         Units are applied in order:
                                         s → m → h → d → wd → w → mo → y.
                --holidays / -hol M/D [M/D ...]
-                                        Dates to skip (format "Month/Day",
-                                        e.g. "12/25"). If the result falls on
-                                        a holiday it is shifted one day in the
-                                        direction of the overall adjustment
-                                        (forward if the net change is zero).
+                                        Dates (format "Month/Day", e.g. "12/25") or
+                                        holiday IDs to skip . If the result
+                                        falls on a holiday it is shifted one
+                                        day in the direction of the overall adjustment
+                                        (forward if the net change is zero) until it falls
+                                        on a non-holiday. If holidays is unspecified, but
+                                        `src/assets/holidays.txt` exists, those dates are
+                                        used as holidays, separated by newlines
+                                        and with comment lines starting with # ignored.
                --skip-weekends / -sw    Shift Sat/Sun results to the next
                                         weekday (combines with --holidays).
                --month-length / -ml N   Treat each month as N days instead
@@ -150,6 +154,29 @@ GENERATOR TYPES
                spills overflow days into the next month; subtracting clamps
                to the last day of the target month. Adding years maps
                Feb 29 → Mar 1 in non-leap target years.
+
+               The algorithm saves common holiday dates by IDs and knows how to calculate
+               the date of floating holidays. IDs available:
+               - new_years - fixed - 1/1
+               - valentines - fixed - 2/14
+               - st_patricks - fixed - 3/17
+               - independence - fixed - 7/4
+               - halloween - fixed - 10/31
+               - christmas - fixed - 12/25
+               - veterans - fixed - 11/11
+               - mlkj - floating - third Monday in January
+               - presidents - floating - third Monday in February
+               - memorial - floating - last Monday in May
+               - labor - floating - first Monday in September
+               - columbus - floating - second Monday in October
+               - thanksgiving - floating - fourth Thursday in November
+               - black_friday - floating - Day after thanksgiving
+               - easter - floating - Anonymous Gregorian algorithm
+               - ash_wednesday - floating - 46 days before easter
+               - good_friday - floating - 2 days before easter
+               - ascension - floating - 39 days after easter
+               - pentecost - floating - 49 days after easter
+               - passover - floating - Gauss's algorithm with Adu Rule
 
     typos      -t TEXT         source text; only keyboard chars +
                                space allowed
