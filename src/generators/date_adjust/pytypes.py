@@ -1,5 +1,5 @@
 from typing import NotRequired, TypedDict
-from generators.date import IntMonthDayPair
+from generators.date import IntMonthDayPair, KnownFixedHoliday
 from .duration_parse import Duration, is_duration, parse_duration
 import argparse
 
@@ -8,7 +8,7 @@ class DateAdjustArgs(TypedDict):
     output_format: str
     date: NotRequired[str | None]
     duration: Duration
-    holidays: list[IntMonthDayPair]
+    holidays: list[IntMonthDayPair | KnownFixedHoliday]
     skip_weekends: bool
     month_length: int | None
 

@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
-from generators.date import len_month, loop_month_int
+from typing import cast
+from generators.date import len_month, loop_month_int, KnownFloatingHoliday, FLOATING_HOLIDAY_MAP, IntMonthDayPair
 from utils import do_while
 from .pytypes import DateAdjustArgs
 
@@ -19,6 +20,10 @@ def gen_date_adjust(args: DateAdjustArgs, log: bool = False) -> str:
     def result_date_str() -> str:
         nonlocal result_date
         return result_date.strftime(output_format)
+
+    def result_date_str_notime() -> str:
+        nonlocal result_date
+        return result_date.strftime("%Y-%m-%d")
 
     if log: print(f"Base date: {result_date_str()}")
 
@@ -42,7 +47,7 @@ def gen_date_adjust(args: DateAdjustArgs, log: bool = False) -> str:
     if duration['days'] != 0:
         if log: print(f"Adjusting date by {duration['days']} days")
         result_date += timedelta(days=duration['days'])
-        if log: print(f"New date: {result_date_str()}")
+        if log: print(f"New date: {result_date_str_notime()}")
 
     if duration['weekdays'] != 0:
         # Similar to days, but skip Saturdays and Sundays. Step one day at a time in the appropriate direction.
@@ -55,12 +60,12 @@ def gen_date_adjust(args: DateAdjustArgs, log: bool = False) -> str:
             if result_date.weekday() < 5:  # Monday=0, Sunday=6
                 weekdays_added += 1
         
-        if log: print(f"New date: {result_date_str()}")
+        if log: print(f"New date: {result_date_str_notime()}")
 
     if duration['weeks'] != 0:
         if log: print(f"Adjusting date by {duration['weeks']} weeks")
         result_date += timedelta(weeks=duration['weeks'])
-        if log: print(f"New date: {result_date_str()}")
+        if log: print(f"New date: {result_date_str_notime()}")
 
     if duration['months'] != 0:
         if log: print(f"Adjusting date by {duration['months']} months")
@@ -94,7 +99,7 @@ def gen_date_adjust(args: DateAdjustArgs, log: bool = False) -> str:
             # If month_length is provided, treat each month as having that many days. Just add the appropriate number of days.
             result_date += timedelta(days=duration['months'] * month_length)
         
-        if log: print(f"New date: {result_date_str()}")
+        if log: print(f"New date: {result_date_str_notime()}")
 
     if duration['years'] != 0:
         if log: print(f"Adjusting date by {duration['years']} years")
@@ -105,10 +110,23 @@ def gen_date_adjust(args: DateAdjustArgs, log: bool = False) -> str:
             # Feb 29 in a non-leap target year -> use March 1
             if log: print(f"Year {new_year} is not a leap year, adjusting Feb 29 to Mar 1")
             result_date = result_date.replace(year=new_year, month=3, day=1)
-        if log: print(f"New date: {result_date_str()}")
+        if log: print(f"New date: {result_date_str_notime()}")
 
     # Adjust result_date forward until it is not a holiday or (if skip_weekends is True) a weekend.
     holidays = args['holidays']
+    # Split the holiday list into fixed and floating, since they need to be handled differently.
+    fixed_holidays = [h for h in holidays if isinstance(h, tuple)]
+    floating_holidays: list[KnownFloatingHoliday] = [cast(KnownFloatingHoliday, h) for h in holidays if isinstance(h, str)]
+
+    def compute_floating_holiday_dates(year: int) -> list[IntMonthDayPair]:
+        if len(floating_holidays) == 0:
+            return []
+        
+        return [FLOATING_HOLIDAY_MAP[name](year) for name in floating_holidays]
+
+    # Initially compute the dates for the current year. This will be recomputed as necessary if the result_date changes years.
+    floating_holiday_dates = compute_floating_holiday_dates(result_date.year)
+
     skip_weekends = args["skip_weekends"]
 
     overall_direction = -1 if result_date < og_date else 1 if result_date > og_date else 0
@@ -117,21 +135,33 @@ def gen_date_adjust(args: DateAdjustArgs, log: bool = False) -> str:
         elif overall_direction > 0: print("Overall, the adjustment moved the date forwards")
         else: print("Overall, the adjustment did not change the date")
 
+    prev_year = result_date.year
     @do_while
     def holiday_weekend_adjust() -> bool:
         nonlocal result_date
+        nonlocal prev_year
+        nonlocal floating_holiday_dates
+        
+        if result_date.year != prev_year and len(floating_holidays) > 0:
+            # Recompute floating holiday dates for the new year
+            if log: print(f"Year changed from {prev_year} to {result_date.year}, recomputing floating holiday dates")
+            floating_holiday_dates = compute_floating_holiday_dates(result_date.year)
+
+        prev_year = result_date.year
         
         should_skip_weekend = skip_weekends and result_date.weekday() >= 5
-        should_skip_holiday = (result_date.month, result_date.day) in holidays
-        should_skip = should_skip_weekend or should_skip_holiday
+        should_skip_fixed_holiday = (result_date.month, result_date.day) in fixed_holidays
+        should_skip_floating_holiday = (result_date.month, result_date.day) in floating_holiday_dates
+        should_skip = should_skip_weekend or should_skip_fixed_holiday or should_skip_floating_holiday
         
         if log:
-            if should_skip_weekend: print(f"Skipping weekend date: {result_date_str()} {'backwards' if overall_direction < 0 else 'forwards'}")
-            elif should_skip_holiday: print(f"Skipping holiday date: {result_date_str()} {'backwards' if overall_direction < 0 else 'forwards'}")
+            if should_skip_weekend: print(f"Skipping weekend date {'backwards' if overall_direction < 0 else 'forwards'}: {result_date_str_notime()}")
+            elif should_skip_fixed_holiday or should_skip_floating_holiday:
+                print(f"Skipping holiday date {'backwards' if overall_direction < 0 else 'forwards'}: {result_date_str_notime()}")
 
         if should_skip:
             result_date += timedelta(days=(overall_direction if overall_direction != 0 else 1))  # If no overall direction, default to forward
-            if log: print(f"New date: {result_date_str()}")
+            if log: print(f"New date: {result_date_str_notime()}")
             return True
         
         return False
