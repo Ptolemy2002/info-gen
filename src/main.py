@@ -17,7 +17,8 @@ from generators import gen_ssn, gen_phone, gen_name, gen_address, gen_typos, gen
                        post_process_args_color
 from global_pytypes import *
 from file_parse import (extract_interpolations, unique_interpolation_map,
-                        resolve_interpolation_args, apply_interpolations)
+                        resolve_interpolation_args, resolve_static_value,
+                        apply_interpolations)
 import zlib
 
 # Put any files that are an output of the script here. "log.txt" will already exist.
@@ -395,7 +396,16 @@ if __name__ == "__main__":
             values = {}
             interp_map = unique_interpolation_map(interpolations)
             for ident in _topo_sort_interpolations(interp_map):
-                inner_args_lst = resolve_interpolation_args(interp_map[ident], values)
+                interp = interp_map[ident]
+
+                if interp.static:
+                    print(f"------- Resolving static '{ident}' ({marker}) -------")
+                    result = resolve_static_value(interp, values)
+                    print(f"Static value for id '{ident}': {result}")
+                    values[ident] = result
+                    continue
+
+                inner_args_lst = resolve_interpolation_args(interp, values)
                 try:
                     inner_args = parse_args(inner_args_lst)
                 except SystemExit:
@@ -406,11 +416,11 @@ if __name__ == "__main__":
                 # for each interpolation, but in a deterministic way. Add the index
                 # to ensure the same file generates differently on each run.
                 inner_args.seed = derive_seed(inner_args.seed if inner_args.seed is not None else args.seed, f"{i}_{ident}", args.seed_byte_size)
-                
+
                 print(f"------- Processing '{ident}' ({marker}) -------")
                 results = main_exec(inner_args)
                 print("------- End Generation -------")
-                
+
                 # Get the last result so that the count argument can be used to force N
                 # generations before a final value (could be useful if using seeds in interpolations)
                 result = results[-1] if results else ""
@@ -421,8 +431,6 @@ if __name__ == "__main__":
                 if result:
                     print(f"Generated value for id '{ident}': {result}")
                     values[ident] = result
-                
-                i += 1
             
             outputs.append(apply_interpolations(text, values))
         

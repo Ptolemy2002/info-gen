@@ -216,12 +216,34 @@ FILE MODE  (-f PATH)
                           {{id: ...}} occurrence. Repeating an id
                           with conflicting args is an error.
 
+    Static tokens
+        {{id = some text}}
+                          the text after '=' is the value itself —
+                          no generator is invoked. May contain
+                          $(other_id) result-references.
+        {{id = prefix-$(other_id)-suffix}}
+                          result-references are resolved before the
+                          value is stored and substituted.
+
+    Synthetic tokens
+        {{#id: TYPE [COUNT] [OPTIONS]}}
+                          executed like a normal token but not emitted
+                          into the output. Use when a value is only
+                          needed as a $(id) dependency for other tokens
+                          and should not appear in the final text.
+        {{#id = some text}}
+                          static + synthetic: value is resolved but
+                          not emitted.
+        {{#id}}           synthetic back-reference; also stripped from
+                          the output.
+
     Result-references
-        $(other_id)       inside an args template, substitute the
-                          resolved value of another token. The token
-                          for other_id must appear somewhere in the
-                          file; dependencies are resolved by
-                          topological sort, and cycles are rejected.
+        $(other_id)       inside an args template or static value,
+                          substitute the resolved value of another
+                          token. The token for other_id must appear
+                          somewhere in the file; dependencies are
+                          resolved by topological sort, and cycles are
+                          rejected.
 
     The outer COUNT positional applies to the whole template:
     `-f tmpl.txt 5` regenerates the entire template five times. Each
@@ -263,6 +285,18 @@ EXAMPLES
         {{id: number 1 -mn 10000 -mx 99999}},
         {{n: name 1}},
         {{e: identifier 1 -idt email -dt personal -fln "$(n)"}}
+
+    template.txt with a synthetic token (hire_date is generated but
+    not emitted; only start and end appear in the output):
+        {{#hire_date: date 1 --after 2020-01-01 --before 2023-12-31}}
+        Start: {{start: date-adjust 1 --date "$(hire_date)" --duration "+0d"}}
+        End:   {{end: date-adjust 1 --date "$(hire_date)" --duration "+2y"}}
+
+    template.txt with a static token (label is a literal string
+    built from another token's result):
+        {{n: name 1}}
+        {{label = Employee: $(n)}}
+        Record for {{label}}
 
 SEE ALSO
     make make-help        documentation for make targets
