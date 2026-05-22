@@ -39,9 +39,13 @@ colors-test:
 	uv run ./src/colors_test.py
 
 start:
+	([ -d .venv ] || uv sync) && \
+	. .venv/bin/activate && \
 	mkdir -p $(MAIN_OUTPUT_DIR) && \
-	uv run ./src/main.py $(FULL_ARGS) 2>&1 | tee $(MAIN_OUTPUT_DIR)/log.txt
-	(cat $(MAIN_OUTPUT_DIR)/log.txt | ansi2txt) | sponge $(MAIN_OUTPUT_DIR)/log.txt
+	export PY_MAKE_ACTIVE=1 && \
+	(uv run ./src/main.py $(FULL_ARGS) 2>&1 | tee $(MAIN_OUTPUT_DIR)/log.txt) && \
+	(cat $(MAIN_OUTPUT_DIR)/log.txt | ansi2txt | sponge $(MAIN_OUTPUT_DIR)/log.txt) && \
+	export PY_MAKE_ACTIVE=0
 
 gen-ssn: FULL_ARGS = ssn 1 -c $(ARGS)
 gen-ssn: start

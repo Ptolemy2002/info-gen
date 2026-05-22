@@ -2,7 +2,7 @@
 import os
 import warnings
 from datetime import datetime
-from typing import Callable
+from typing import Callable, cast
 from colorama import Fore
 
 # Always show user warnings to the console
@@ -15,6 +15,7 @@ def warning_on_one_line(message, category, filename, lineno, file=None, line=Non
 warnings.formatwarning = warning_on_one_line
 
 SRC_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+RUN_WITH_MAKE = os.environ.get("PY_MAKE_ACTIVE", "0") == "1"
 
 def _replace_last(string: str, old: str, new: str) -> str:
     old_idx = string.rfind(old)
@@ -43,16 +44,19 @@ def get_latest_main_outputs_dir() -> str:
     os.makedirs(path, exist_ok=True)
     
     for i, key_fn in enumerate([int, int, int, _time_key]):
-        name = _max_subdir(path, key_fn)
-        if name is None:
+        name = None
+        if RUN_WITH_MAKE:
+            name = _max_subdir(path, key_fn)
+    
+        if name is None or not RUN_WITH_MAKE:
             # Create folders based on the current time if they do not exist.
             now = datetime.now()
-            if i == 3: name = now.strftime("%H-%M-%S")
-            elif i == 2: name = now.strftime("%d")
-            elif i == 1: name = now.strftime("%m")
-            else: name = now.strftime("%Y")
+            if i == 0: name = f"{now.year}"
+            elif i == 1: name = f"{now.month:02d}"
+            elif i == 2: name = f"{now.day:02d}"
+            elif i == 3: name = f"{now.hour:02d}-{now.minute:02d}-{now.second:02d}"
         
-        path = os.path.join(path, name)
+        path = os.path.join(path, cast(str, name))
         os.makedirs(path, exist_ok=True)
     return path
 

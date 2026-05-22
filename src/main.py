@@ -377,6 +377,8 @@ def _topo_sort_interpolations(interp_map: dict) -> list[str]:
 
 
 if __name__ == "__main__":
+    print(f"Outputs directory: {OUTPUTS_DIR}")
+    print(f"Run with make: {output_utils.RUN_WITH_MAKE}")
     args = parse_args(sys.argv[1:])
 
     if args.seed is None:

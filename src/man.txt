@@ -7,8 +7,8 @@ SYNOPSIS
 
 INVOCATION
     Run via `make start ARGS="..."` or `uv run src/main.py ...`.
-    Running directly will cause log file issues.
-    All arguments documented below are forwarded to main.py. See
+    Running without make will cause the log file to be missing, but otherwise
+    works the same. All arguments documented below are forwarded to main.py. See
     `make-man.txt` for the full set of make targets.
 
 DESCRIPTION
