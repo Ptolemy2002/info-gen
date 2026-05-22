@@ -56,6 +56,9 @@ def gen_name(type: str, args: NameArgs, log: bool = False) -> str:
             last_name = args.get("last_name")
             gender = args.get("gender")
 
+            first_only = args.get("first_only", False)
+            last_only = args.get("last_only", False)
+
             if gender is None:
                 if log: print("No specified gender. Generating a random gender for the person.")
                 gender = random.choice(["male", "female", "nb"])
@@ -63,31 +66,45 @@ def gen_name(type: str, args: NameArgs, log: bool = False) -> str:
             used_first_name: str | None = None
             used_last_name: str | None = None
 
-            if first_name is not None:
-                used_first_name = first_name
-                if log: print(f"Using provided first name '{first_name}'.")
-            else:
-                if log: print(f"No first name provided. Generating a random first name with gender '{gender}'.")
-                if gender == "nb":
-                    used_first_name = fake.first_name_nonbinary()
-                elif gender == "male":
-                    used_first_name = fake.first_name_male()
-                elif gender == "female":
-                    used_first_name = fake.first_name_female()
+            if first_only and last_only:
+                if log: print("Both --first-only and --last-only flags are set. Ignoring both and generating full name.")
+                first_only = False
+                last_only = False
 
-            if last_name is not None:
-                used_last_name = last_name
-                if log: print(f"Using provided last name '{last_name}'.")
-            else:
-                if log: print(f"No last name provided. Generating a random last name with gender '{gender}'.")
-                if gender == "nb":
-                    used_last_name = fake.last_name_nonbinary()
-                elif gender == "male":
-                    used_last_name = fake.last_name_male()
-                elif gender == "female":
-                    used_last_name = fake.last_name_female()
+            if not last_only:
+                if first_name is not None:
+                    used_first_name = first_name
+                    if log: print(f"Using provided first name '{first_name}'.")
+                else:
+                    if log: print(f"No first name provided. Generating a random first name with gender '{gender}'.")
+                    if gender == "nb":
+                        used_first_name = fake.first_name_nonbinary()
+                    elif gender == "male":
+                        used_first_name = fake.first_name_male()
+                    elif gender == "female":
+                        used_first_name = fake.first_name_female()
+            elif log: print("Skipping first name generation due to --last-only flag.")
 
-            return f"{used_first_name} {used_last_name}"
+            if not first_only:
+                if last_name is not None:
+                    used_last_name = last_name
+                    if log: print(f"Using provided last name '{last_name}'.")
+                else:
+                    if log: print(f"No last name provided. Generating a random last name with gender '{gender}'.")
+                    if gender == "nb":
+                        used_last_name = fake.last_name_nonbinary()
+                    elif gender == "male":
+                        used_last_name = fake.last_name_male()
+                    elif gender == "female":
+                        used_last_name = fake.last_name_female()
+            elif log: print("Skipping last name generation due to --first-only flag.")
+            
+            if first_only:
+                return used_first_name if used_first_name is not None else ""
+            elif last_only:
+                return used_last_name if used_last_name is not None else ""
+            else:
+                return f"{used_first_name} {used_last_name}"
         case "music_genre":
             genre = args.get("music_genre")
             if genre is not None:

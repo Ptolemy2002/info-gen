@@ -73,6 +73,8 @@ GENERATOR TYPES
                            -ge {male|female|nb},
                            -fln "First Last"
                            (-fln overrides -fn/-ln)
+                           --first-only / -fo   emit only the first name (person only)
+                            --last-only / -lo    emit only the last name (person only)
         file_name          -fc {audio|image|office|text|video},
                            -ft EXT  (-ft overrides -fc)
         website            -sd N    subdomain count (default 1)

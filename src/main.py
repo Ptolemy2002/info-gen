@@ -289,7 +289,9 @@ def main_exec(args: Namespace) -> list[str]:
         'file_type': args.file_type,
         'subdomains': args.subdomains,
         'music_genre': args.parent_music_genre,
-        'music_instrument_category': args.music_instrument_category
+        'music_instrument_category': args.music_instrument_category,
+        'first_only': args.first_only,
+        'last_only': args.last_only
     }
 
     identifier_args: IdentifierArgs = {

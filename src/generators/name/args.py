@@ -55,6 +55,18 @@ def add_args_name(parser: ArgumentParser) -> ArgumentParser:
         help="Instrument category for music_instrument generation"
     )
 
+    parser.add_argument(
+        '--first-only', '-fo',
+        action='store_true',
+        help="For person name generation, only return the first name component."
+    )
+
+    parser.add_argument(
+        '--last-only', '-lo',
+        action='store_true',
+        help="For person name generation, only return the last name component."
+    )
+
     return parser
 
 def post_process_args_name(args: Namespace) -> Namespace:

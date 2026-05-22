@@ -9,3 +9,5 @@ class NameArgs(TypedDict):
     last_name: NotRequired[str | None]
     music_genre: NotRequired[str | None]
     music_instrument_category: NotRequired[str | None]
+    first_only: NotRequired[bool]
+    last_only: NotRequired[bool]
