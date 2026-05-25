@@ -16,10 +16,10 @@ StrWeekday = Literal['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'sa
 Weekday = StrWeekday | int
 
 StrMonthDayPair = tuple[StrMonth, int]
-MonthDayPair = tuple[Month, int]
 IntMonthDayPair = tuple[int, int]
+MonthDayPair = tuple[Month, int]
 
-MONTH_MAP: dict[StrMonth, int] = {
+MONTH_NUM_MAP: dict[StrMonth, int] = {
     'january': 1,
     'february': 2,
     'march': 3,
@@ -34,14 +34,20 @@ MONTH_MAP: dict[StrMonth, int] = {
     'december': 12
 }
 
-SEASON_MAP: dict[int, StrSeason] = {
+NUM_MONTH_MAP: dict[int, StrMonth] = {v: k for k, v in MONTH_NUM_MAP.items()}
+
+# Add fall as an alias for autumn in the season number map, but keep it out of the number season map
+# so that fall-equivalent is always normalized to autumn, but users can still input fall as a season.
+NUM_SEASON_MAP: dict[int, StrSeason] = {
     1: 'spring',
     2: 'summer',
     3: 'autumn',
     4: 'winter'
 }
 
-WEEKDAY_MAP: dict[StrWeekday, int] = {
+SEASON_NUM_MAP: dict[StrSeason, int] = {**{v: k for k, v in NUM_SEASON_MAP.items()}, 'fall': 3}
+
+WEEKDAY_NUM_MAP: dict[StrWeekday, int] = {
     'monday': 0,
     'tuesday': 1,
     'wednesday': 2,
@@ -50,6 +56,8 @@ WEEKDAY_MAP: dict[StrWeekday, int] = {
     'saturday': 5,
     'sunday': 6
 }
+
+NUM_WEEKDAY_MAP: dict[int, StrWeekday] = {v: k for k, v in WEEKDAY_NUM_MAP.items()}
 
 class DateArgs(TypedDict):
     input_format: str
@@ -100,7 +108,7 @@ def normalize_day(year: int, month: Month, day: int) -> int:
 
 def normalize_season_str(season: Season) -> StrSeason:
     if isinstance(season, int):
-        return SEASON_MAP[season]
+        return NUM_SEASON_MAP[season]
 
     if season == 'fall':
         return 'autumn'
@@ -112,33 +120,18 @@ def normalize_season_int(season: Season) -> int:
         return min(max(1, season), 4)
     
     season_str = normalize_season_str(season)
-    for k, v in SEASON_MAP.items():
-        if v == season_str:
-            return k
-    
-    # Should never reach here, but just in case
-    return 0
+    return SEASON_NUM_MAP[season_str]
 
 def normalize_month_int(month: Month) -> int:
-    global MONTH_MAP
-
     if isinstance(month, int):
         return min(max(1, month), 12)
     
-    return MONTH_MAP[month]
+    return MONTH_NUM_MAP[month]
 
 def normalize_month_str(month: Month) -> StrMonth:
-    global MONTH_MAP
-
     if isinstance(month, int):
         month = min(max(1, month), 12)
-
-        for k, v in MONTH_MAP.items():
-            if v == month:
-                return k
-        
-        # Should never reach here, but just in case
-        return cast(StrMonth, '')
+        return NUM_MONTH_MAP[month]
     
     return month
 
@@ -147,18 +140,12 @@ def normalize_weekday_int(weekday: Weekday) -> int:
         return min(max(0, weekday), 6)
     
     weekday_str = cast(StrWeekday, weekday.lower())
-    return WEEKDAY_MAP[weekday_str]
+    return WEEKDAY_NUM_MAP[weekday_str]
 
 def normalize_weekday_str(weekday: Weekday) -> StrWeekday:
     if isinstance(weekday, int):
         weekday = min(max(0, weekday), 6)
-
-        for k, v in WEEKDAY_MAP.items():
-            if v == weekday:
-                return k
-        
-        # Should never reach here, but just in case
-        return cast(StrWeekday, '')
+        return NUM_WEEKDAY_MAP[weekday]
     
     return cast(StrWeekday, weekday.lower())
 
@@ -179,7 +166,7 @@ def loop_season_int(season: Season, delta: int) -> int:
 
 def loop_season_str(season: Season, delta: int) -> StrSeason:
     season_int = loop_season_int(season, delta)
-    return SEASON_MAP[season_int]
+    return NUM_SEASON_MAP[season_int]
 
 def loop_weekday_int(weekday: Weekday, delta: int) -> int:
     weekday_int = normalize_weekday_int(weekday) + delta
@@ -187,19 +174,14 @@ def loop_weekday_int(weekday: Weekday, delta: int) -> int:
 
 def loop_weekday_str(weekday: Weekday, delta: int) -> StrWeekday:
     weekday_int = loop_weekday_int(weekday, delta)
-    for k, v in WEEKDAY_MAP.items():
-        if v == weekday_int:
-            return k
-    
-    # Should never reach here, but just in case
-    return cast(StrWeekday, '')
+    return NUM_WEEKDAY_MAP[weekday_int]
 
 def len_month(year: int, month: int) -> int:
     return monthrange(year, month)[1]
 
 def month_argtype(s: str) -> int | str:
     lower = s.lower()
-    if lower in MONTH_MAP:
+    if lower in MONTH_NUM_MAP:
         return lower
     try:
         val = int(s)
@@ -211,7 +193,7 @@ def month_argtype(s: str) -> int | str:
 
 def season_argtype(s: str) -> int | str:
     lower = s.lower()
-    if lower in SEASON_MAP.values() or lower == 'fall':
+    if lower in SEASON_NUM_MAP:
         return lower
 
     try:
@@ -509,7 +491,7 @@ def calc_season_bounds(year: int, target_tz: str='UTC') -> SeasonBoundSet:
 
     times, season_indices = almanac.find_discrete(t0, t1, almanac.seasons(eph))
 
-    season_names = [SEASON_MAP[index + 1] for index in range(4)]
+    season_names = [NUM_SEASON_MAP[index + 1] for index in range(4)]
     results: SeasonBoundSet = {}
     
     # Store localized datetime objects temporarily to make the math precise
