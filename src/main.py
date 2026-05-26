@@ -46,6 +46,7 @@ def main(
         min_val: float = 0,
         max_val: float = 100,
         precision: int = 0,
+        field_length: int = 0,
         date_args: DateArgs = cast(DateArgs, {}),
         date_adjust_args: DateAdjustArgs = cast(DateAdjustArgs, {}),
     ) -> list[str]:
@@ -94,7 +95,7 @@ def main(
 
     if val_type == "number":
         for _ in range(count):
-            results.append(gen_number(min_val, max_val, precision, log=True))
+            results.append(gen_number(min_val, max_val, precision, field_length, log=True))
 
     if val_type == "identifier":
         for _ in range(count):
@@ -347,7 +348,7 @@ def main_exec(args: Namespace) -> list[str]:
         not args.no_state_abbr, not args.no_existing_city,
         typo_args, color_args, name_args=name_args, name_type=args.name_type,
         identifier_args=identifier_args, identifier_type=args.identifier_type,
-        min_val=args.min, max_val=args.max, precision=args.precision,
+        min_val=args.min, max_val=args.max, precision=args.precision, field_length=args.field_length,
         date_args=date_args, date_adjust_args=date_adjust_args
     )
 

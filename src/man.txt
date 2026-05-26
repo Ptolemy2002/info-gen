@@ -48,9 +48,11 @@ GENERATOR TYPES
                Defaults use the reserved fake range
                (central=555, line 100–199).
 
-    number     --min FLOAT, --max FLOAT, --precision N
+    number     --min FLOAT, --max FLOAT, --precision N, --field-length N / -fl N
                Integer when precision=0 (default), float otherwise.
                --min/--max default to 0/100.
+               --field-length sets the minimum total character length; the
+               result is left-padded with zeros if shorter (default: 0).
 
     address    -bn NUM, -ste STREET, -ci CITY, -st STATE, -z ZIP
                --no-state-abbr   keep full state names

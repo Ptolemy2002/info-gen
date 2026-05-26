@@ -51,6 +51,15 @@ def number_precision_argtype(s: str) -> int:
         return value
     except ValueError:
         raise argparse.ArgumentTypeError("Precision must be a non-negative integer.")
+    
+def number_field_length_argtype(s: str) -> int:
+    try:
+        value = int(s)
+        if value < 0:
+            raise argparse.ArgumentTypeError("Field length must be a non-negative integer.")
+        return value
+    except ValueError:
+        raise argparse.ArgumentTypeError("Field length must be a non-negative integer.")
 
 def count_argtype(s: str) -> int:
     try:
