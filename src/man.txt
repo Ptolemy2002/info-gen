@@ -76,7 +76,17 @@ GENERATOR TYPES
                            -fln "First Last"
                            (-fln overrides -fn/-ln)
                            --first-only / -fo   emit only the first name (person only)
-                            --last-only / -lo    emit only the last name (person only)
+                           --last-only / -lo    emit only the last name (person only)
+                           --behind-name-key / -bnk KEY
+                                               API key for Behind the Name; when
+                                               provided together with --usage-type,
+                                               uses the Behind the Name API instead
+                                               of Faker for name generation.
+                           --usage-type / -ut TYPE
+                                               usage/language type for Behind the Name
+                                               (e.g. eng, fre, ger). Must be used with
+                                               --behind-name-key to take effect. Valid
+                                               types: behindthename.com/api/appendix2.php
         file_name          -fc {audio|image|office|text|video},
                            -ft EXT  (-ft overrides -fc)
         website            -sd N    subdomain count (default 1)

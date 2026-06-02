@@ -114,7 +114,7 @@ gen-date-adjusts: start
 clean-dirty-colors: FULL_ARGS = --clean-dirty-colors $(ARGS)
 clean-dirty-colors: start
 
-help: FULL_ARGS = --h $(ARGS)
+help: FULL_ARGS = --help $(ARGS)
 help: start
 
 usage: FULL_ARGS = -u $(ARGS)

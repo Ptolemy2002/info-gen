@@ -67,6 +67,20 @@ def add_args_name(parser: ArgumentParser) -> ArgumentParser:
         help="For person name generation, only return the last name component."
     )
 
+    parser.add_argument(
+        '--usage-type', '-ut',
+        default=None,
+        help="Usage type for person name generation (e.g. eng, fre, ger). Must be used with the '--behind-name-key' argument to work correctly." \
+             "Valid usage types can be seen at https://www.behindthename.com/api/appendix2.php"
+    )
+
+    parser.add_argument(
+        '--behind-name-key', '-bnk',
+        default=None,
+        help="API key for Behind the Name random name generator. If provided, will be used to fetch random names based on the specified usage type and gender" \
+             "instead of using Faker"
+    )
+
     return parser
 
 def post_process_args_name(args: Namespace) -> Namespace:

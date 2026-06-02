@@ -292,7 +292,9 @@ def main_exec(args: Namespace) -> list[str]:
         'music_genre': args.parent_music_genre,
         'music_instrument_category': args.music_instrument_category,
         'first_only': args.first_only,
-        'last_only': args.last_only
+        'last_only': args.last_only,
+        'behind_name_key': args.behind_name_key,
+        'usage_type': args.usage_type
     }
 
     identifier_args: IdentifierArgs = {

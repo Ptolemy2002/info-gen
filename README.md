@@ -20,6 +20,9 @@ Generate personal information with either a guarantee or reasonable expectation 
 * `faker-music` - for generating fake music genres and instruments.
 * `faker-vehicle` - for generating fake vehicle information.
 * `skyfield` - for calculating season bounds based on astronomical data.
+* `tzlocal` - for determining time zones based on location.
+* `beautifulsoup4` - for parsing HTML responses from APIs.
+* `requests` - for making HTTP requests to external APIs.
 
 **Linux Dependencies:**
 * `colorized-logs` - for removing ANSI color codes from log files.

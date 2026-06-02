@@ -11,3 +11,5 @@ class NameArgs(TypedDict):
     music_instrument_category: NotRequired[str | None]
     first_only: NotRequired[bool]
     last_only: NotRequired[bool]
+    behind_name_key: NotRequired[str | None]
+    usage_type: NotRequired[str | None]

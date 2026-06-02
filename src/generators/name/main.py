@@ -1,5 +1,5 @@
 import random
-from utils import value_or_default
+from utils import value_or_default, get_first_name_with_usage, get_last_name_with_usage
 from fake import get_fake
 from faker_music.genres import genre_list
 from faker_music.instruments import instrument_list
@@ -71,18 +71,29 @@ def gen_name(type: str, args: NameArgs, log: bool = False) -> str:
                 first_only = False
                 last_only = False
 
+            behind_name_key = args.get("behind_name_key")
+            usage_type = args.get("usage_type")
+
             if not last_only:
                 if first_name is not None:
                     used_first_name = first_name
                     if log: print(f"Using provided first name '{first_name}'.")
                 else:
                     if log: print(f"No first name provided. Generating a random first name with gender '{gender}'.")
-                    if gender == "nb":
-                        used_first_name = fake.first_name_nonbinary()
-                    elif gender == "male":
-                        used_first_name = fake.first_name_male()
-                    elif gender == "female":
-                        used_first_name = fake.first_name_female()
+
+                    
+
+                    if behind_name_key is not None and usage_type is not None:
+                        if log: print(f"Using Behind the Name API with usage type '{usage_type}' as generator")
+                        used_first_name = get_first_name_with_usage(behind_name_key, usage_type, gender)
+                    else:
+                        if log: print("Either Behind the Name API key or usage type not provided. Using Faker as generator.")
+                        if gender == "nb":
+                            used_first_name = fake.first_name_nonbinary()
+                        elif gender == "male":
+                            used_first_name = fake.first_name_male()
+                        elif gender == "female":
+                            used_first_name = fake.first_name_female()
             elif log: print("Skipping first name generation due to --last-only flag.")
 
             if not first_only:
@@ -91,12 +102,17 @@ def gen_name(type: str, args: NameArgs, log: bool = False) -> str:
                     if log: print(f"Using provided last name '{last_name}'.")
                 else:
                     if log: print(f"No last name provided. Generating a random last name with gender '{gender}'.")
-                    if gender == "nb":
-                        used_last_name = fake.last_name_nonbinary()
-                    elif gender == "male":
-                        used_last_name = fake.last_name_male()
-                    elif gender == "female":
-                        used_last_name = fake.last_name_female()
+
+                    if behind_name_key is not None and usage_type is not None:
+                        if log: print(f"Using Behind the Name API with usage type '{usage_type}' as generator")
+                        used_last_name = get_last_name_with_usage(behind_name_key, usage_type)
+                    else:
+                        if gender == "nb":
+                            used_last_name = fake.last_name_nonbinary()
+                        elif gender == "male":
+                            used_last_name = fake.last_name_male()
+                        elif gender == "female":
+                            used_last_name = fake.last_name_female()
             elif log: print("Skipping last name generation due to --first-only flag.")
             
             if first_only:

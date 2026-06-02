@@ -28,5 +28,8 @@ outputs
 # A holidays file, configured by the user, not meant to be tracked
 **/assets/holidays.txt
 
+# A table file extracted from behindthename.com, not meant to be tracked
+**/assets/behind_name_table.html
+
 # A skyfield file
 de421.bsp
